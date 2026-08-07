@@ -63,6 +63,8 @@ No test framework is currently configured.
 | `bunx prisma validate` | Validate the schema |
 | `bunx prisma format` | Format `schema.prisma` |
 | `bunx prisma studio` | Browse data in a local GUI |
+| `bunx prisma db seed` | Run the seed script |
+| `bunx prisma migrate reset` | Drop the database, replay migrations, and re-seed (destructive) |
 
 After editing `prisma/schema.prisma`, run `bunx prisma migrate dev --name <describes-change>`.
 That applies the change and regenerates the client in one step — a bare `prisma generate` only
@@ -70,6 +72,34 @@ updates the client and leaves the database untouched.
 
 `migrate dev` is for local development only; it may prompt to reset the database. Use
 `migrate deploy` against anything with real data.
+
+### Seeding
+
+`prisma/seed.ts` creates the default admin user. It requires `ADMIN_EMAIL` and
+`ADMIN_PASSWORD` in `.env` and exits with an error if either is missing. The script is
+idempotent — re-running it against an existing admin is a no-op.
+
+It is wired up through `migrations.seed` in `prisma.config.ts`, so it runs automatically after
+`prisma migrate reset` as well as on demand via `prisma db seed`.
+
+Values in `.env` are read literally: write `ADMIN_EMAIL=admin@example.com`, with no quotes and
+no trailing semicolon. Anything extra becomes part of the value and is stored verbatim in the
+database.
+
+### When the client falls out of sync
+
+If a query fails with a type error that contradicts the schema — for example
+`invalid input syntax for type uuid` after switching an ID type — the generated client is
+stale. Run `bunx prisma generate`.
+
+Each command reports on a different layer, and all three can look healthy while disagreeing:
+
+- `prisma validate` checks schema syntax only.
+- `prisma migrate status` compares applied migrations against `prisma/migrations/`, not
+  against `schema.prisma` — editing the schema without creating a migration still reports
+  "up to date".
+- The generated client in `lib/generated/prisma` is a separate artifact that only
+  `prisma generate` (or a successful `migrate dev`) refreshes.
 
 Note that `prisma validate` checks schema syntax only — it will not tell you where generated
 output lands or whether the database matches. Use `prisma migrate status` for the latter.

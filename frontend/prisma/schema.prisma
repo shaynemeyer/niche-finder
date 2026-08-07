@@ -36,7 +36,7 @@ enum ReportStatus {
 }
 
 model User {
-  id            String    @id @default(cuid())
+  id            String    @id @default(uuid(7)) @db.Uuid
   name          String?
   email         String    @unique
   emailVerified DateTime?
@@ -57,7 +57,7 @@ model User {
 }
 
 model Account {
-  userId            String
+  userId            String  @db.Uuid
   type              String
   provider          String
   providerAccountId String
@@ -76,7 +76,7 @@ model Account {
 
 model Session {
   sessionToken String   @unique
-  userId       String
+  userId       String   @db.Uuid
   expires      DateTime
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -92,7 +92,7 @@ model VerificationToken {
 
 model Authenticator {
   credentialID         String  @unique
-  userId               String
+  userId               String  @db.Uuid
   providerAccountId    String
   credentialPublicKey  String
   counter              Int
@@ -107,8 +107,8 @@ model Authenticator {
 
 // Subscription Model
 model Subscription {
-  id        String    @id @default(cuid())
-  userId    String    @unique
+  id        String    @id @default(uuid(7)) @db.Uuid
+  userId    String    @unique @db.Uuid
   planType  PlanType  @default(FREE)
   startDate DateTime  @default(now())
   endDate   DateTime?
@@ -123,8 +123,8 @@ model Subscription {
 
 // Usage Log Model (tracks monthly usage)
 model UsageLog {
-  id              String   @id @default(cuid())
-  userId          String
+  id              String   @id @default(uuid(7)) @db.Uuid
+  userId          String   @db.Uuid
   month           Int // 1-12
   year            Int
   validationCount Int      @default(0)
@@ -139,8 +139,8 @@ model UsageLog {
 
 // Report Model
 model Report {
-  id        String       @id @default(cuid())
-  userId    String
+  id        String       @id @default(uuid(7)) @db.Uuid
+  userId    String       @db.Uuid
   niche     String       @db.VarChar(255)
   keyword   String       @db.VarChar(255)
   status    ReportStatus @default(PENDING)
@@ -170,8 +170,8 @@ model Report {
 
 // Payment Request Model (for bank transfer payments)
 model PaymentRequest {
-  id             String        @id @default(cuid())
-  userId         String
+  id             String        @id @default(uuid(7)) @db.Uuid
+  userId         String        @db.Uuid
   transactionId  String        @db.VarChar(255)
   invoicePath    String        @db.VarChar(500)
   status         PaymentStatus @default(PENDING)

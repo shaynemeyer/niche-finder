@@ -1,0 +1,191 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum PlanType {
+  FREE
+  PRO
+}
+
+enum PaymentStatus {
+  PENDING
+  APPROVED 
+  REJECTED
+}
+
+enum ReportStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  password      String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  role          Role @default(USER)
+
+  accounts        Account[]
+  sessions        Session[]
+  authenticators  Authenticator[]
+
+  subscription    Subscription?
+  reports         Report[]
+  usage           UsageLog[]
+  paymentRequests PaymentRequest[]
+}
+
+model Account {
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([provider, providerAccountId])
+}
+
+model Session {
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String
+  expires    DateTime
+
+  @@id([identifier, token])
+}
+
+model Authenticator {
+  credentialID         String  @unique
+  userId               String
+  providerAccountId    String
+  credentialPublicKey  String
+  counter              Int
+  credentialDeviceType String
+  credentialBackedUp   Boolean
+  transports           String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, credentialID])
+}
+
+// Subscription Model
+model Subscription {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  planType  PlanType @default(FREE)
+  startDate DateTime @default(now())
+  endDate   DateTime?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("subscriptions")
+}
+
+
+// Usage Log Model (tracks monthly usage)
+model UsageLog {
+  id              String   @id @default(cuid())
+  userId          String
+  month           Int // 1-12
+  year            Int
+  validationCount Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, month, year])
+  @@map("usage_logs")
+}
+
+// Report Model
+model Report {
+  id        String       @id @default(cuid())
+  userId    String
+  niche     String       @db.VarChar(255)
+  keyword   String       @db.VarChar(255)
+  status    ReportStatus @default(PENDING)
+  isPublic  Boolean      @default(false)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  // JSON fields for storing analysis data
+  trendsData        Json? // Stores Google Trends data
+  aiInsights        Json? // Stores AI-generated insights
+  competitionData   Json? // Stores competition analysis
+  monetizationIdeas Json? // Stores monetization suggestions
+  gtmStrategy       Json? // Stores go-to-market strategy
+
+  // Summary fields
+  overallScore     Float?  @default(0) // 0-100 score
+  viabilityRating  String? // HIGH, MEDIUM, LOW
+  summaryText      String? @db.Text
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([niche])
+  @@index([createdAt])
+  @@map("reports")
+}
+
+// Payment Request Model (for bank transfer payments)
+model PaymentRequest {
+  id              String        @id @default(cuid())
+  userId          String
+  transactionId   String        @db.VarChar(255)
+  invoicePath     String        @db.VarChar(500)
+  status          PaymentStatus @default(PENDING)
+  rejectedReason  String?       @db.Text
+  approvedAt      DateTime?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("payment_requests")
+}
+

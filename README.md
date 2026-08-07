@@ -4,8 +4,8 @@ AI-powered niche and market validation. Enter a niche idea and get a research re
 Reddit community analysis, Google Trends demand data, competition insights, and AI-generated
 strategy — instead of validating by guesswork.
 
-> **Status: early development.** The landing page and data model exist; the application itself
-> is still being built.
+> **Status: early development.** The landing page, database schema, and seed exist.
+> Authentication and the application routes are still being built.
 
 ## Repository layout
 
@@ -15,16 +15,19 @@ strategy — instead of validating by guesswork.
 
 ## Getting started
 
-All setup lives in the frontend package:
+All setup lives in the frontend package. It needs [Bun](https://bun.sh), a PostgreSQL
+database, and a populated `.env`:
 
 ```bash
 cd frontend
 bun install
+cp .env.example .env   # then fill in the values
+bunx prisma migrate dev
 bun dev
 ```
 
-See [`frontend/README.md`](frontend/README.md) for prerequisites, environment variables, and
-the full command reference.
+See [`frontend/README.md`](frontend/README.md) for the environment variables and the full
+command reference.
 
 ## Stack
 
@@ -44,4 +47,5 @@ Free tier allows 3 validations per month; Pro adds unlimited validations and dee
 
 - [`frontend/README.md`](frontend/README.md) — setup and commands
 - [`frontend/CLAUDE.md`](frontend/CLAUDE.md) — architecture notes and known gaps
-- [`frontend/docs/`](frontend/docs/) — technical write-ups
+- [`frontend/docs/jsonb-indexing.md`](frontend/docs/jsonb-indexing.md) — JSONB searchability
+  and indexing on `Report`

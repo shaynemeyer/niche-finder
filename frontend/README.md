@@ -20,13 +20,30 @@ Requires [Bun](https://bun.sh) (this project pins `bun@1.3.8`).
 bun install
 ```
 
-Set `DATABASE_URL` in `.env` to a PostgreSQL connection string, then apply migrations and
-generate the client:
+Copy `.env.example` to `.env` and fill in the values:
+
+```bash
+cp .env.example .env
+```
+
+| Variable | Purpose |
+| --- | --- |
+| `DATABASE_URL` | PostgreSQL connection string |
+| `AUTH_SECRET` | NextAuth signing secret |
+| `NEXTAUTH_URL` | Base URL, `http://localhost:3000` in development |
+| `OPENAI_API_KEY` | AI report generation |
+| `ADMIN_EMAIL` / `ADMIN_PASSWORD` | Credentials for the seeded admin user |
+
+Apply migrations and seed the database:
 
 ```bash
 bunx prisma migrate dev
-bunx prisma generate
+bunx prisma db seed
 ```
+
+`migrate dev` regenerates the Prisma client as part of the run. There is no `postinstall`
+hook, so after a fresh clone the client does not exist until you run this (or
+`bunx prisma generate`).
 
 Run the dev server:
 
@@ -82,9 +99,10 @@ idempotent — re-running it against an existing admin is a no-op.
 It is wired up through `migrations.seed` in `prisma.config.ts`, so it runs automatically after
 `prisma migrate reset` as well as on demand via `prisma db seed`.
 
-Values in `.env` are read literally: write `ADMIN_EMAIL=admin@example.com`, with no quotes and
-no trailing semicolon. Anything extra becomes part of the value and is stored verbatim in the
-database.
+`.env` is not JavaScript. Dotenv strips a matching pair of quotes wrapping the whole value, so
+both `ADMIN_EMAIL=admin@example.com` and `ADMIN_EMAIL="admin@example.com"` work — but a
+trailing semicolon defeats the stripping, and `"admin@example.com";` is stored verbatim,
+quotes and all. Never end a line with `;`.
 
 ### When the client falls out of sync
 
@@ -100,9 +118,6 @@ Each command reports on a different layer, and all three can look healthy while 
   "up to date".
 - The generated client in `lib/generated/prisma` is a separate artifact that only
   `prisma generate` (or a successful `migrate dev`) refreshes.
-
-Note that `prisma validate` checks schema syntax only — it will not tell you where generated
-output lands or whether the database matches. Use `prisma migrate status` for the latter.
 
 ## Notes
 

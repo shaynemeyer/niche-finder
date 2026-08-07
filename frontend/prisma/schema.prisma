@@ -24,7 +24,7 @@ enum PlanType {
 
 enum PaymentStatus {
   PENDING
-  APPROVED 
+  APPROVED
   REJECTED
 }
 
@@ -44,11 +44,11 @@ model User {
   password      String?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
-  role          Role @default(USER)
+  role          Role      @default(USER)
 
-  accounts        Account[]
-  sessions        Session[]
-  authenticators  Authenticator[]
+  accounts       Account[]
+  sessions       Session[]
+  authenticators Authenticator[]
 
   subscription    Subscription?
   reports         Report[]
@@ -107,20 +107,19 @@ model Authenticator {
 
 // Subscription Model
 model Subscription {
-  id        String   @id @default(cuid())
-  userId    String   @unique
-  planType  PlanType @default(FREE)
-  startDate DateTime @default(now())
+  id        String    @id @default(cuid())
+  userId    String    @unique
+  planType  PlanType  @default(FREE)
+  startDate DateTime  @default(now())
   endDate   DateTime?
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  isActive  Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("subscriptions")
 }
-
 
 // Usage Log Model (tracks monthly usage)
 model UsageLog {
@@ -157,9 +156,9 @@ model Report {
   gtmStrategy       Json? // Stores go-to-market strategy
 
   // Summary fields
-  overallScore     Float?  @default(0) // 0-100 score
-  viabilityRating  String? // HIGH, MEDIUM, LOW
-  summaryText      String? @db.Text
+  overallScore    Float?  @default(0) // 0-100 score
+  viabilityRating String? // HIGH, MEDIUM, LOW
+  summaryText     String? @db.Text
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -171,15 +170,15 @@ model Report {
 
 // Payment Request Model (for bank transfer payments)
 model PaymentRequest {
-  id              String        @id @default(cuid())
-  userId          String
-  transactionId   String        @db.VarChar(255)
-  invoicePath     String        @db.VarChar(500)
-  status          PaymentStatus @default(PENDING)
-  rejectedReason  String?       @db.Text
-  approvedAt      DateTime?
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
+  id             String        @id @default(cuid())
+  userId         String
+  transactionId  String        @db.VarChar(255)
+  invoicePath    String        @db.VarChar(500)
+  status         PaymentStatus @default(PENDING)
+  rejectedReason String?       @db.Text
+  approvedAt     DateTime?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -188,4 +187,3 @@ model PaymentRequest {
   @@index([createdAt])
   @@map("payment_requests")
 }
-

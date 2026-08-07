@@ -3,10 +3,9 @@
 AI-powered niche and market validation: Reddit analysis, Google Trends data, competition
 insights, and generated market reports.
 
-> **Status: early scaffold.** The landing page is built. The application itself is not —
-> `app/(auth)/`, `app/admin/`, `app/api/`, and `app/dashboard/` exist but are empty, and the
-> Prisma schema has no models yet. Dependencies for the full feature set are installed but
-> mostly unused.
+> **Status: early scaffold.** The landing page and data model are in place. The application
+> itself is not — `app/(auth)/`, `app/admin/`, `app/api/`, and `app/dashboard/` exist but are
+> empty, and authentication is not yet configured.
 
 ## Stack
 
@@ -21,10 +20,11 @@ Requires [Bun](https://bun.sh) (this project pins `bun@1.3.8`).
 bun install
 ```
 
-Set `DATABASE_URL` in `.env` to a PostgreSQL connection string, then generate the Prisma
-client:
+Set `DATABASE_URL` in `.env` to a PostgreSQL connection string, then apply migrations and
+generate the client:
 
 ```bash
+bunx prisma migrate dev
 bunx prisma generate
 ```
 
@@ -44,13 +44,35 @@ Open http://localhost:3000.
 | `bun run build` | Production build |
 | `bun run lint` | Run ESLint |
 | `bunx tsc --noEmit` | Typecheck |
-| `bunx prisma validate` | Validate the schema |
-| `bunx prisma generate` | Regenerate the client into `lib/generated/prisma` |
 
 Use `bun run build` / `bun run lint`, not `bun build` / `bun lint` — the shorter forms invoke
 Bun's own builtins instead of these package scripts.
 
 No test framework is currently configured.
+
+## Prisma
+
+| Command | Description |
+| --- | --- |
+| `bunx prisma migrate dev` | Apply pending migrations and regenerate the client |
+| `bunx prisma migrate dev --name <name>` | Create a new migration from schema changes |
+| `bunx prisma migrate dev --create-only --name <name>` | Generate migration SQL without applying it, for hand-editing |
+| `bunx prisma migrate status` | Show which migrations are applied |
+| `bunx prisma migrate deploy` | Apply migrations in production (never generates or resets) |
+| `bunx prisma generate` | Regenerate the client into `lib/generated/prisma` |
+| `bunx prisma validate` | Validate the schema |
+| `bunx prisma format` | Format `schema.prisma` |
+| `bunx prisma studio` | Browse data in a local GUI |
+
+After editing `prisma/schema.prisma`, run `bunx prisma migrate dev --name <describes-change>`.
+That applies the change and regenerates the client in one step — a bare `prisma generate` only
+updates the client and leaves the database untouched.
+
+`migrate dev` is for local development only; it may prompt to reset the database. Use
+`migrate deploy` against anything with real data.
+
+Note that `prisma validate` checks schema syntax only — it will not tell you where generated
+output lands or whether the database matches. Use `prisma migrate status` for the latter.
 
 ## Notes
 

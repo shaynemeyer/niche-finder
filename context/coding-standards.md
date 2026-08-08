@@ -61,9 +61,13 @@ frontend/
 - Props are typed with `React.ComponentProps<'div'>` and spread, rather than hand-rolled
   interfaces — see `LoginForm`.
 - Compose classes with `cn()` from `@/lib/utils` (clsx + tailwind-merge).
-- Style with theme tokens (`bg-background`, `text-muted-foreground`), not literal colors, so
-  dark mode works. `app/page.tsx` still uses hardcoded `bg-white`/`text-gray-*` — that is a
-  known defect, not the pattern to copy.
+- Style with theme tokens (`bg-background`, `bg-card`, `text-foreground`,
+  `text-muted-foreground`, `border-border`, `bg-primary`), not literal colors — literals ignore
+  the `.dark` variant that `globals.css` defines for both schemes. `app/page.tsx` is the
+  reference for a full page built this way.
+- Brand accents that are deliberately off-palette (the blue-purple gradient, the feature
+  icons) keep their hue but need an explicit `dark:` variant — a `-600` shade that reads well
+  on white is usually too dark on a dark background. See the icons in `app/page.tsx`.
 
 ## Forms and validation
 

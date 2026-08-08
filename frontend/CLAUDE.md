@@ -107,10 +107,6 @@ from `User`.
 
 Real, currently-unresolved issues — not aspirational cleanups:
 
-- **`app/page.tsx` is hardcoded light-mode.** 22 literal `bg-white` / `text-gray-*` classes
-  instead of the theme tokens (`bg-background`, `text-foreground`) that `globals.css` defines
-  for both schemes, so the landing page ignores the `.dark` variant that the rest of the app
-  respects.
 - **No report pipeline.** The entire product surface past auth is unbuilt.
 - **The free-tier limit is not enforced anywhere.** `UsageLog` rows are created with
   `validationCount: 0` at registration and seeding, then never incremented or read. The

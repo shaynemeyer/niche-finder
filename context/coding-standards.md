@@ -84,6 +84,43 @@ The established pattern, used by both auth forms:
 7. **Re-validate the same schema server-side** in the route handler. Client validation is UX
    only.
 
+## Tables
+
+Use **TanStack Table** (`@tanstack/react-table`) for any dynamic table — one with sorting,
+filtering, pagination, row selection, or column visibility. The admin user list and the
+reports list are the cases this exists for.
+
+- Compose it with the shadcn `table` primitive (`bunx shadcn@latest add table`). TanStack
+  Table is headless: it owns state and typed APIs, not markup, so the rendered `<table>`
+  stays yours and follows the same theme tokens as everything else.
+- **Use the v9 API.** `useTable`, not v8's `useReactTable`, and register features explicitly
+  via the `features` option rather than passing `getCoreRowModel()` and friends as options.
+  Most tutorials still show v8 — check before copying.
+- A plain `<table>` is fine for static markup with no interaction. Reach for TanStack Table
+  when behaviour is involved, not for every table.
+
+See `frontend/docs/tanstack-table.md` for the version history and why the v8/v9 split
+matters here.
+
+## Client state
+
+`useState` first. When state outgrows it, use **Zustand** — not Context, and not
+`useReducer`.
+
+"Outgrows it" means state shared across components that are not parent and child, state
+that must survive navigation, or a `useState` cluster that several components need to read
+and write. A single component's own state stays `useState`.
+
+- Stores live in `lib/stores/`, one file per domain area, named `use<Thing>Store`.
+- Select narrowly — `useThingStore((s) => s.field)`, not the whole store — so components
+  re-render only on the slice they read.
+- Server state is not client state. Session data comes from `auth()` or `useSession()`, and
+  data loaded per request belongs in a server component. Don't mirror either into a store.
+
+Nothing uses this yet: current client state is the mobile menu's `useState` in
+`app/dashboard/layout.tsx` and react-hook-form inside `ValidationForm`. Both are correct as
+they stand.
+
 ## Error handling
 
 Deliberately non-defensive — errors are handled where there is a real branch to take.

@@ -8,7 +8,11 @@ import {
   TrendingUp,
 } from 'lucide-react';
 
+import { ThemeToggle } from '@/components/theme-toggle';
+
 export default function Home() {
+  const currentYear = new Date().getFullYear();
+
   return (
     <div>
       {/* Navigation */}
@@ -22,14 +26,15 @@ export default function Home() {
               </span>
             </div>
             <div className="flex items-center gap-4">
+              <ThemeToggle />
               <Link
-                href="/auth/signin"
+                href="/signin"
                 className="text-gray-600 hover:text-gray-900 transition"
               >
                 Sign In
               </Link>
               <Link
-                href="/auth/register"
+                href="/register"
                 className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
               >
                 Get Started
@@ -55,7 +60,7 @@ export default function Home() {
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             <Link
-              href="/auth/register"
+              href="/register"
               className="px-8 py-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex items-center gap-2 text-lg font-semibold"
             >
               Start Validating Free
@@ -136,7 +141,7 @@ export default function Home() {
               'View public reports',
             ]}
             buttonText="Start Free"
-            buttonHref="/auth/register"
+            buttonHref="/register"
           />
           <PricingCard
             title="Pro"
@@ -153,7 +158,7 @@ export default function Home() {
               'Email alerts for trending niches',
             ]}
             buttonText="Upgrade to Pro"
-            buttonHref="/auth/register"
+            buttonHref="/register"
           />
         </div>
       </section>
@@ -162,7 +167,7 @@ export default function Home() {
       <footer className="border-t bg-white/50 backdrop-blur-sm mt-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="text-center text-gray-600">
-            <p>&copy; 2024 NicheCopy. All rights reserved.</p>
+            <p>&copy; {currentYear} NicheFinder. All rights reserved.</p>
           </div>
         </div>
       </footer>

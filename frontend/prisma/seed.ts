@@ -6,6 +6,56 @@ import { PlanType, PrismaClient, Role } from '../lib/generated/prisma/client';
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
 const prisma = new PrismaClient({ adapter });
 
+async function seedUser(
+  email: string,
+  password: string,
+  role: Role = Role.USER,
+  planType: PlanType = PlanType.FREE,
+): Promise<void> {
+  if (!email || !password) {
+    throw new Error('email and password must be provided');
+  }
+
+  // Check if user already exists
+  const existingUser = await prisma.user.findUnique({
+    where: { email },
+  });
+
+  if (existingUser) {
+    console.log(`User with email ${email} already exists`);
+    return;
+  }
+
+  // Hash the password
+  const hashedPassword = await bcrypt.hash(password, 12);
+
+  // Create user
+  await prisma.user.create({
+    data: {
+      email,
+      password: hashedPassword,
+      name: role === Role.ADMIN ? 'Admin User' : 'User',
+      role,
+      image: 'default-avatar.png',
+      subscription: {
+        create: {
+          planType,
+          isActive: true,
+        },
+      },
+      usage: {
+        create: {
+          month: new Date().getMonth() + 1,
+          year: new Date().getFullYear(),
+          validationCount: 0,
+        },
+      },
+    },
+  });
+
+  console.log(`${role} user created successfully: ${email}`);
+}
+
 async function main() {
   console.log('Staring database seeding...');
 
@@ -17,41 +67,22 @@ async function main() {
     throw new Error('ADMIN_EMAIL and ADMIN_PASSWORD must be set in .env');
   }
 
-  // Check if admin already exists
-  const existingAdmin = await prisma.user.findUnique({
-    where: { email: adminEmail },
-  });
+  // Explicit admin creation
+  await seedUser(adminEmail, adminPassword, Role.ADMIN, PlanType.PRO);
 
-  if (existingAdmin) {
-    console.log('Admin user already exists');
-  } else {
-    // Hash the password
-    const hashedPassword = await bcrypt.hash(adminPassword, 12);
+  // Create default non-admin user
+  const defaultUserEmail = process.env.DEFAULT_USER_EMAIL;
+  const defaultUserPassword = process.env.DEFAULT_USER_PASSWORD;
 
-    // Create admin user
-    await prisma.user.create({
-      data: {
-        email: adminEmail,
-        password: hashedPassword,
-        name: 'Admin User',
-        role: Role.ADMIN,
-        subscription: {
-          create: {
-            planType: PlanType.PRO,
-            isActive: true,
-          },
-        },
-        usage: {
-          create: {
-            month: new Date().getMonth() + 1,
-            year: new Date().getFullYear(),
-            validationCount: 0,
-          },
-        },
-      },
-    });
-    console.log('Admin user created successfully');
+  if (!defaultUserEmail || !defaultUserPassword) {
+    throw new Error(
+      'DEFAULT_USER_EMAIL and DEFAULT_USER_PASSWORD must be set in .env',
+    );
   }
+
+  await seedUser(defaultUserEmail, defaultUserPassword);
+
+  console.log('\n Database seeding completed');
 }
 
 main()

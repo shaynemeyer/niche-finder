@@ -1,5 +1,5 @@
 'use client';
-import { useSession } from 'next-auth/react';
+import { signOut, useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useState } from 'react';
@@ -22,6 +22,12 @@ export default function DashboardLayout({
   const { data: session, status } = useSession();
   const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  async function handleSignOut() {
+    await signOut({ redirect: false });
+    router.push('/signin');
+    router.refresh();
+  }
 
   if (status === 'loading') {
     return (
@@ -93,10 +99,12 @@ export default function DashboardLayout({
               </div>
               <ThemeToggle />
               <button
+                onClick={handleSignOut}
                 className="ml-1 p-2 rounded-lg hover:bg-accent transition"
                 title="Sign out"
               >
                 <LogOut className="h-5 w-5 text-muted-foreground" />
+                <span className="sr-only">Sign out</span>
               </button>
             </div>
           </div>
@@ -146,7 +154,13 @@ export default function DashboardLayout({
                   </Link>
                 );
               })}
-              <button className="w-full group flex items-center px-3 py-2 text-base font-medium rounded-lg hover:bg-accent text-destructive">
+              <button
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  handleSignOut();
+                }}
+                className="w-full group flex items-center px-3 py-2 text-base font-medium rounded-lg hover:bg-accent text-destructive"
+              >
                 <LogOut className="mr-4 h-6 w-6" />
                 Sign out
               </button>

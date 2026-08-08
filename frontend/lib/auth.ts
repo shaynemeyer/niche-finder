@@ -10,6 +10,35 @@ const DEFAULT_SESSION_MAX_AGE = 30 * 24 * 60 * 60; // 30 days
 /** Session lifetime in seconds, overridable via SESSION_MAX_AGE. */
 const sessionMaxAge = Number(process.env.SESSION_MAX_AGE) || DEFAULT_SESSION_MAX_AGE;
 
+/**
+ * Verifies an email/password pair against the stored bcrypt hash.
+ *
+ * Returns null for every failure mode — unknown email, an account with no
+ * password (OAuth-only), and a wrong password are indistinguishable to the
+ * caller, so the response cannot be used to enumerate registered accounts.
+ */
+export async function verifyCredentials(email: string, password: string) {
+  const user = await prisma.user.findUnique({ where: { email } });
+
+  if (!user?.password) {
+    return null;
+  }
+
+  const isPasswordValid = await bcrypt.compare(password, user.password);
+
+  if (!isPasswordValid) {
+    return null;
+  }
+
+  return {
+    id: user.id,
+    email: user.email,
+    name: user.name,
+    image: user.image,
+    role: user.role,
+  };
+}
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma),
   providers: [
@@ -24,33 +53,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           return null;
         }
 
-        const user = await prisma.user.findUnique({
-          where: { email: credentials.email as string },
-        });
-
         // Returning null is the documented signal for a failed sign-in.
-        // Every failure returns the same result so the response cannot be
-        // used to tell a registered email from an unregistered one.
-        if (!user?.password) {
-          return null;
-        }
-
-        const isPasswordValid = await bcrypt.compare(
+        return verifyCredentials(
+          credentials.email as string,
           credentials.password as string,
-          user.password,
         );
-
-        if (!isPasswordValid) {
-          return null;
-        }
-
-        return {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          image: user.image,
-          role: user.role,
-        };
       },
     }),
   ],

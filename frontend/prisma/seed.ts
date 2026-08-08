@@ -3,7 +3,15 @@ import { PrismaPg } from '@prisma/adapter-pg';
 import bcrypt from 'bcryptjs';
 import { PlanType, PrismaClient, Role } from '../lib/generated/prisma/client';
 
-const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
+const connectionString = process.env.DATABASE_URL;
+
+// The adapter ignores ?schema= in the connection string, so it has to be
+// passed separately — otherwise seeding always targets `public`.
+const schema = connectionString
+  ? (new URL(connectionString).searchParams.get('schema') ?? undefined)
+  : undefined;
+
+const adapter = new PrismaPg({ connectionString }, { schema });
 const prisma = new PrismaClient({ adapter });
 
 async function seedUser(

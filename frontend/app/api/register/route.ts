@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 
 import { prisma } from '@/lib/prisma';
-import { Prisma } from '@/lib/generated/prisma/client';
+import { Prisma, Role } from '@/lib/generated/prisma/client';
 import { registerSchema } from '@/lib/validations/auth';
 
 export async function POST(request: Request) {
@@ -21,11 +21,12 @@ export async function POST(request: Request) {
   try {
     const hashedPassword = await bcrypt.hash(password, 12);
 
-    await prisma.user.create({
+    const user = await prisma.user.create({
       data: {
         name,
         email,
         password: hashedPassword,
+        role: Role.USER,
         subscription: {
           create: { planType: 'FREE', isActive: true },
         },
@@ -37,7 +38,15 @@ export async function POST(request: Request) {
           },
         },
       },
+      // Never read the password hash back out of the database.
+      omit: { password: true },
+      include: { subscription: true },
     });
+
+    return NextResponse.json(
+      { message: 'User created successfully', user },
+      { status: 201 },
+    );
   } catch (error) {
     // P2002: unique constraint violation on email.
     if (
@@ -56,6 +65,4 @@ export async function POST(request: Request) {
       { status: 500 },
     );
   }
-
-  return NextResponse.json({ ok: true }, { status: 201 });
 }

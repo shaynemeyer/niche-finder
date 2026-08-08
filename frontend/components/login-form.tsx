@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { signIn } from 'next-auth/react';
+import { getSession, signIn } from 'next-auth/react';
 
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -33,11 +33,12 @@ export function LoginForm({
   const searchParams = useSearchParams();
 
   // Only accept relative paths, so the callback cannot redirect off-site.
+  // Null when absent or rejected, so the role-based default applies instead.
   const requestedUrl = searchParams.get('callbackUrl');
   const callbackUrl =
     requestedUrl?.startsWith('/') && !requestedUrl.startsWith('//')
       ? requestedUrl
-      : '/dashboard';
+      : null;
 
   const form = useForm<SignInValues>({
     resolver: zodResolver(signInSchema),
@@ -63,7 +64,16 @@ export function LoginForm({
       return;
     }
 
-    router.push(callbackUrl);
+    // signIn({ redirect: false }) resolves before the session is readable, so
+    // the role has to be fetched to pick a landing page. An explicit
+    // callbackUrl still wins: a deep link should survive the sign-in.
+    if (callbackUrl) {
+      router.push(callbackUrl);
+    } else {
+      const session = await getSession();
+      router.push(session?.user?.role === 'ADMIN' ? '/admin' : '/dashboard');
+    }
+
     router.refresh();
   }
 

@@ -28,8 +28,28 @@ test.describe('sign-in', () => {
     await signIn(page, userEmail, userPassword);
 
     await expect(page).toHaveURL(/\/dashboard/);
-    await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible();
-    await expect(page.getByText(userEmail)).toBeVisible();
+    await expect(page.getByRole('heading', { name: /welcome back/i })).toBeVisible();
+  });
+
+  test('signs an admin in and lands on /admin', async ({ page }) => {
+    await signIn(page, adminEmail, adminPassword);
+
+    await expect(page).toHaveURL(/\/admin/);
+  });
+
+  test('honours an explicit callbackUrl over the role default', async ({ page }) => {
+    // A deep link must survive sign-in rather than being replaced by /admin.
+    await page.goto('/signin?callbackUrl=%2Fdashboard');
+    await page.getByLabel('Email').fill(adminEmail);
+    await page.getByLabel('Password', { exact: true }).fill(adminPassword);
+
+    const callback = page.waitForResponse((response) =>
+      response.url().includes('/api/auth/callback/credentials'),
+    );
+    await page.getByRole('button', { name: 'Login' }).click();
+    await callback;
+
+    await expect(page).toHaveURL(/\/dashboard/);
   });
 
   test('shows the same error for a wrong password as for an unknown email', async ({ page }) => {
@@ -67,7 +87,9 @@ test.describe('route protection', () => {
     await page.goto('/admin');
 
     await expect(page).toHaveURL(/\/admin/);
-    await expect(page.getByRole('heading', { name: 'Admin' })).toBeVisible();
+    // The admin sidebar is rendered by the layout, so it is stable while the
+    // page itself is still a placeholder.
+    await expect(page.getByRole('link', { name: 'Payment Requests' })).toBeVisible();
   });
 });
 

@@ -31,9 +31,9 @@ so passwords can be guessed as fast as the network allows. Uniform failure messa
 attacker learning *which* accounts exist, but do nothing to stop them guessing passwords for
 an account they already know — and `admin@` addresses are guessable.
 
-**Apply it at the credentials callback, not per page.** `/signin` and `/admin-login` both
-call the same provider; a limiter attached to either page is bypassed by posting directly to
-`/api/auth/callback/credentials`.
+**Apply it at the credentials callback, not per page.** A limiter attached to the sign-in
+page is bypassed by posting directly to `/api/auth/callback/credentials`, and by any future
+login surface.
 
 Shape:
 
@@ -77,7 +77,7 @@ noticing — a reset form that says "no account with that email" leaks exactly w
 
 Worth an E2E spec asserting that the visible message is byte-identical for a real address
 with a wrong password and an address that does not exist. `e2e/auth.spec.ts` already covers
-this for `/signin`; extend it to `/admin-login` and to any new flow.
+this for `/signin`; extend it to any new flow.
 
 ## 4. Session and cookie review
 
@@ -90,16 +90,22 @@ Not audited yet, listed so it is not forgotten:
 - Consider whether a 30-day session is right for `ADMIN`. A shorter `maxAge` for
   privileged roles limits the value of a stolen token, at some usability cost.
 
-## Explicitly not doing: role-gating the admin login
+## Explicitly not doing: a separate, role-gated admin login
 
-Rejecting non-admins at `/admin-login` sounds safer and is not. To reject someone by role,
-the password must be verified first — so a valid-password-wrong-role response becomes
-distinguishable from a wrong-password response, by message, timing, or behaviour. That is an
-oracle telling an attacker precisely which accounts hold `ADMIN`, which is a targeted
-phishing list.
+A dedicated admin login page that rejects non-admins sounds safer and is not. To reject
+someone by role, the password must be verified first — so a valid-password-wrong-role
+response becomes distinguishable from a wrong-password response, by message, timing, or
+behaviour. That is an oracle telling an attacker precisely which accounts hold `ADMIN`,
+which is a targeted phishing list.
 
-It also buys nothing: `proxy.ts` and `app/admin/page.tsx` already stop non-admins reaching
-any admin route, whichever page they signed in from.
+It also buys nothing. `proxy.ts` and `app/admin/page.tsx` already stop non-admins reaching
+any admin route, whichever page they signed in from — a login page is not a security
+boundary.
+
+A branded `/admin-login` page was built and then removed: it authenticated through the same
+provider with the same uniform errors, so the only real difference was where it redirected
+on success. That belongs in `/signin`, which now sends `ADMIN` users to `/admin` and
+everyone else to `/dashboard`.
 
 ## Sources
 

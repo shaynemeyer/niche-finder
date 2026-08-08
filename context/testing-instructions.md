@@ -55,9 +55,17 @@ Only write tests with a real failure mode.
   mocked with `vi.mock('@/lib/prisma', ...)`
 - `lib/auth.test.ts` — `verifyCredentials()` returning null identically for unknown email,
   passwordless account, and wrong password
+- `lib/validations/report.test.ts` — the niche/keyword length boundaries, which mirror the
+  `VarChar(255)` columns on `Report`
+- `lib/googleTrends.test.ts` — response mapping, the null-on-failure contract that keeps an
+  outage distinguishable from genuine low demand, trend thresholds, and region sorting.
+  `google-trends-api` and `sleep` are both mocked, so it needs no network and stays fast
 
-The scoring and analysis logic in the report pipeline, once built, is the highest-value target
-left: deterministic inputs, deterministic outputs, no I/O.
+**Mock `sleep` when testing anything that rate-limits.** `lib/googleTrends.ts` pauses two
+seconds after every upstream call; without the mock its suite takes eighteen.
+
+The scoring and analysis logic in the rest of the report pipeline, once built, is the
+highest-value target left: deterministic inputs, deterministic outputs, no I/O.
 
 **Playwright** — `e2e/auth.spec.ts` covers sign-in, the account-enumeration guarantee at the UI
 level, route protection by session and role, and registration including the duplicate-email

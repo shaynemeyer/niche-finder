@@ -16,8 +16,15 @@ a Pro tier. See `app/page.tsx` — the landing page is the fullest statement of 
 
 **Auth and the data model are built. The product itself is not.** Registration, credentials
 sign-in, JWT sessions, and role-based route protection all work end to end and are covered by
-tests. The report pipeline does not exist: `openai`, `google-trends-api`, `axios`, `recharts`,
-`jspdf`, and `node-cron` are installed but unused.
+tests.
+
+The user and admin dashboards exist as presentational shells: components under
+`components/dashboard/` and `components/admin/` take typed props, but every value passed to
+them is a placeholder because there is no data layer yet.
+
+The report pipeline is barely started. `lib/googleTrends.ts` wraps the Google Trends API
+with typed responses and is unit tested, but **nothing calls it**. `openai`, `axios`,
+`recharts`, `jspdf`, and `node-cron` are installed and unused.
 
 Expect to create files rather than edit them for anything report-related, and don't assume a
 helper exists because its dependency is in `package.json`.
@@ -107,14 +114,20 @@ from `User`.
 
 Real, currently-unresolved issues — not aspirational cleanups:
 
-- **No report pipeline.** The entire product surface past auth is unbuilt.
+- **No report pipeline.** `lib/googleTrends.ts` is the only piece that exists and nothing
+  calls it. There is no route handler, no persistence to `Report`, and no UI wiring.
+- **The dashboards show placeholder data.** Every metric on `/dashboard` and `/admin` is a
+  hardcoded zero passed as a prop. The components are real; the numbers are not.
 - **The free-tier limit is not enforced anywhere.** `UsageLog` rows are created with
-  `validationCount: 0` at registration and seeding, then never incremented or read. The
-  3-validations/month cap the landing page advertises has no implementation.
-- Formatting is not enforced by tooling. Hand-written code under `app/`, `components/`,
-  `lib/auth.ts`, `lib/validations/`, and `types/` is single-quoted with semicolons;
-  `lib/prisma.ts` and `lib/utils.ts` predate that and use double quotes without semicolons.
-  No Prettier config exists. Match the file you're editing.
+  `validationCount: 0` at registration and seeding, then never incremented or read.
+  `FREE_TIER_MONTHLY_LIMIT` in `lib/constants.ts` is read only for display.
+- **No rate limiting on authentication.** See `docs/auth-hardening-plan.md`; it is the
+  highest-value item there.
+- `lib/auth.ts` points NextAuth at `/signout` and `/error`, neither of which exists. Both
+  404. See `docs/todo.md`.
+- Formatting is not enforced by tooling. Hand-written code is single-quoted with semicolons;
+  `lib/prisma.ts` still uses double quotes without semicolons. No Prettier config exists.
+  Match the file you're editing.
 
 ## Conventions
 

@@ -37,14 +37,22 @@ frontend/
   app/            route segments; page.tsx per route, route.ts for handlers
     (auth)/       route group — signin/ and register/, NOT part of the URL
     api/          route handlers
-  components/     app components, flat, kebab-case files
+  components/     shared app components, kebab-case files
     ui/           shadcn primitives — add via the shadcn CLI, don't hand-write
-  lib/            auth.ts, prisma.ts, utils.ts, constants.ts
+    dashboard/    components for /dashboard, one per section
+    admin/        components for /admin, one per section
+  lib/            auth.ts, prisma.ts, utils.ts, constants.ts, googleTrends.ts
     validations/  zod schemas, one file per domain area
     generated/    Prisma client output — gitignored, never edit
   prisma/         schema.prisma, migrations/, seed.ts
   types/          ambient .d.ts only
+  docs/           decision records and plans
 ```
+
+- Components used by one route group live in a folder named for it
+  (`components/dashboard/`); anything shared across routes stays at the top level. A page
+  should read as a list of composed sections, not a wall of markup — `app/admin/page.tsx`
+  is the reference.
 
 - Files are kebab-case (`login-form.tsx`, `theme-toggle.tsx`); components are PascalCase and
   **named** exports (`export function LoginForm`). Pages are the exception — default export,

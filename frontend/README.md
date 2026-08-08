@@ -182,4 +182,14 @@ while the client queries another, failing with `P2021 TableDoesNotExist`. `lib/p
 
 Generated client code lands in `lib/generated/prisma` and is gitignored.
 
+## Documentation
+
+| File | What it covers |
+| --- | --- |
+| [`docs/todo.md`](docs/todo.md) | Known gaps found while working on something else |
+| [`docs/auth-hardening-plan.md`](docs/auth-hardening-plan.md) | Auth weaknesses, prioritised — rate limiting first |
+| [`docs/jsonb-indexing.md`](docs/jsonb-indexing.md) | Searching and indexing the JSONB columns on `Report` |
+| [`docs/tanstack-table.md`](docs/tanstack-table.md) | Why TanStack Table, and the v8/v9 trap |
+| [`docs/storybook-plan.md`](docs/storybook-plan.md) | Plan for adding Storybook (not implemented) |
+
 See `CLAUDE.md` for fuller architecture notes and known gaps.

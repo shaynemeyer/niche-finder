@@ -7,9 +7,13 @@ competition insights, and AI-generated strategy.
 Single Next.js 16 app in `frontend/`. There is no separate backend.
 
 **Current state:** authentication is built and working (credentials sign-in, registration,
-JWT sessions, role-based redirects). The data model is complete and migrated. The report
-generation pipeline — the actual product — is not built yet: `openai`,
-`google-trends-api`, `axios`, `recharts`, `jspdf`, and `node-cron` are installed but unused.
+JWT sessions, role-based redirects). The data model is complete and migrated. The user and
+admin dashboards are built as presentational shells — the components exist and take typed
+props, but every value is a placeholder because no data layer feeds them yet.
+
+The report pipeline is partly started: `lib/googleTrends.ts` wraps the Google Trends API
+with typed responses and is unit tested, but nothing calls it. `openai`, `axios`,
+`recharts`, `jspdf`, and `node-cron` remain installed and unused.
 
 ---
 
@@ -98,7 +102,9 @@ All child relations cascade on user delete.
 | Export (planned)       | jspdf, jspdf-autotable                                                   |
 | Scheduling (planned)   | node-cron                                                                |
 | Package manager        | bun 1.3.8                                                                |
-| Tests                  | **none installed**                                                       |
+| Tests                  | Vitest 4 (unit), Playwright (E2E)                                        |
+| State (planned)        | Zustand, when `useState` is not enough                                   |
+| Tables (planned)       | TanStack Table v9                                                        |
 
 Prisma 7 specifics that break v6 habits: the datasource block holds `provider` only (the URL
 lives in `prisma.config.ts`), the generator is `prisma-client` with a required `output`

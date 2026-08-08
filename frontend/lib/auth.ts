@@ -21,22 +21,28 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
-          throw new Error('Invaild credentials');
+          return null;
         }
 
         const user = await prisma.user.findUnique({
           where: { email: credentials.email as string },
-          include: { subscription: true },
         });
 
-        if (!user || !user.password) throw new Error('Invaild credentials');
+        // Returning null is the documented signal for a failed sign-in.
+        // Every failure returns the same result so the response cannot be
+        // used to tell a registered email from an unregistered one.
+        if (!user?.password) {
+          return null;
+        }
 
         const isPasswordValid = await bcrypt.compare(
           credentials.password as string,
           user.password,
         );
 
-        if (!isPasswordValid) throw new Error('Invaild credentials');
+        if (!isPasswordValid) {
+          return null;
+        }
 
         return {
           id: user.id,

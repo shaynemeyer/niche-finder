@@ -3,6 +3,13 @@
 Known gaps found while working on something else. Each entry states what is wrong, how it
 was verified, and why it was not fixed at the time.
 
+## No rate limiting on authentication
+
+Nothing limits repeated sign-in attempts, so passwords can be guessed as fast as the
+network allows. This is the largest remaining weakness in the auth surface.
+
+See `docs/auth-hardening-plan.md` for this and the rest of the auth work, prioritised.
+
 ## Auth pages configured but missing
 
 `lib/auth.ts` points NextAuth at three custom pages, two of which do not exist:

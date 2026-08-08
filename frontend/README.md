@@ -3,9 +3,9 @@
 AI-powered niche and market validation: Reddit analysis, Google Trends data, competition
 insights, and generated market reports.
 
-> **Status: early scaffold.** The landing page and data model are in place. The application
-> itself is not — `app/(auth)/`, `app/admin/`, `app/api/`, and `app/dashboard/` exist but are
-> empty, and authentication is not yet configured.
+> **Status: authentication complete, product unbuilt.** Registration, sign-in, sessions, and
+> role-based route protection work and are covered by tests. The report pipeline — Reddit,
+> Trends, AI insights, PDF export — does not exist yet.
 
 ## Stack
 
@@ -31,8 +31,13 @@ cp .env.example .env
 | `DATABASE_URL` | PostgreSQL connection string |
 | `AUTH_SECRET` | NextAuth signing secret |
 | `NEXTAUTH_URL` | Base URL, `http://localhost:3000` in development |
-| `OPENAI_API_KEY` | AI report generation |
-| `ADMIN_EMAIL` / `ADMIN_PASSWORD` | Credentials for the seeded admin user |
+| `ADMIN_EMAIL` / `ADMIN_PASSWORD` | Seeded admin user — **required by the seed** |
+| `DEFAULT_USER_EMAIL` / `DEFAULT_USER_PASSWORD` | Seeded non-admin user — **required by the seed** |
+| `SESSION_MAX_AGE` | Optional. Session lifetime in seconds; defaults to 30 days |
+| `OPENAI_API_KEY` | AI report generation (not yet used by any code) |
+
+`prisma/seed.ts` throws if any of the four seed credentials is missing — all four are
+required, not just the admin pair.
 
 Apply migrations and seed the database:
 
@@ -61,11 +66,41 @@ Open http://localhost:3000.
 | `bun run build` | Production build |
 | `bun run lint` | Run ESLint |
 | `bunx tsc --noEmit` | Typecheck |
+| `bun run test` | Vitest unit tests, watch mode |
+| `bun run test:run` | Vitest unit tests, single run |
+| `bun run test:e2e` | Playwright E2E tests |
+| `bun run test:e2e:ui` | Playwright UI mode |
 
 Use `bun run build` / `bun run lint`, not `bun build` / `bun lint` — the shorter forms invoke
 Bun's own builtins instead of these package scripts.
 
-No test framework is currently configured.
+## Testing
+
+**Vitest** covers validation schemas, the register route handler, and credential verification.
+It mocks Prisma and needs no database:
+
+```bash
+bun run test:run
+```
+
+**Playwright** covers sign-in, route protection, and registration in a real browser against a
+production build. It needs its own environment file:
+
+```bash
+cp .env.example.test .env.test   # then set DATABASE_URL
+bun run test:e2e
+```
+
+E2E tests write real rows, so they run against a **separate Postgres schema** in the same
+database — the `DATABASE_URL` in `.env.test` must end in `?schema=test`. `e2e/global-setup.ts`
+applies migrations and seeds that schema before the suite runs, and refuses to start if the
+URL names no schema. Development data in the default schema is never touched.
+
+Playwright's browser binary is a one-time install:
+
+```bash
+bunx playwright install chromium
+```
 
 ## Prisma
 
@@ -132,9 +167,18 @@ the client requires a driver adapter passed explicitly:
 import { PrismaClient } from '@/lib/generated/prisma/client'
 import { PrismaPg } from '@prisma/adapter-pg'
 
-const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL })
+const connectionString = process.env.DATABASE_URL
+const schema = new URL(connectionString).searchParams.get('schema') ?? undefined
+
+const adapter = new PrismaPg({ connectionString }, { schema })
 export const prisma = new PrismaClient({ adapter })
 ```
+
+The second argument is not optional in practice: **`@prisma/adapter-pg` does not read
+`?schema=` from the connection string.** node-postgres ignores that parameter and falls back to
+`public`, while the Prisma CLI honours it — so `migrate deploy` can create tables in one schema
+while the client queries another, failing with `P2021 TableDoesNotExist`. `lib/prisma.ts` and
+`prisma/seed.ts` both parse it out of the URL.
 
 Generated client code lands in `lib/generated/prisma` and is gitignored.
 

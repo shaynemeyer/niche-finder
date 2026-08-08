@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import Link from 'next/link';
 
 import { LoginForm } from '@/components/login-form';
@@ -13,7 +14,9 @@ export default function SignInPage() {
         <Link href="/" className="flex justify-center">
           <span className="text-3xl font-bold">NicheFinder</span>
         </Link>
-        <LoginForm />
+        <Suspense>
+          <LoginForm />
+        </Suspense>
       </div>
     </div>
   );

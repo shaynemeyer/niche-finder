@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { signIn } from 'next-auth/react';
@@ -30,6 +30,14 @@ export function LoginForm({
   ...props
 }: React.ComponentProps<'div'>) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // Only accept relative paths, so the callback cannot redirect off-site.
+  const requestedUrl = searchParams.get('callbackUrl');
+  const callbackUrl =
+    requestedUrl?.startsWith('/') && !requestedUrl.startsWith('//')
+      ? requestedUrl
+      : '/dashboard';
 
   const form = useForm<SignInValues>({
     resolver: zodResolver(signInSchema),
@@ -55,7 +63,7 @@ export function LoginForm({
       return;
     }
 
-    router.push('/dashboard');
+    router.push(callbackUrl);
     router.refresh();
   }
 

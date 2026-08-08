@@ -62,13 +62,13 @@ Defined in `frontend/prisma/schema.prisma`. PostgreSQL, Prisma 7, UUIDv7 primary
 
 **Domain:**
 
-| Model | Purpose | Key fields |
-| --- | --- | --- |
-| `User` | Account + role | `email` (unique), `password` (bcrypt, nullable for OAuth), `role` |
-| `Subscription` | One per user | `planType` (FREE/PRO), `isActive`, `endDate` |
-| `UsageLog` | Monthly quota tracking | unique on `(userId, month, year)`, `validationCount` |
-| `Report` | A validation run | `niche`, `keyword`, `status`, `overallScore`, `viabilityRating`, `summaryText` |
-| `PaymentRequest` | Bank-transfer upgrade | `transactionId`, `invoicePath`, `status`, `rejectedReason` |
+| Model            | Purpose                | Key fields                                                                     |
+| ---------------- | ---------------------- | ------------------------------------------------------------------------------ |
+| `User`           | Account + role         | `email` (unique), `password` (bcrypt, nullable for OAuth), `role`              |
+| `Subscription`   | One per user           | `planType` (FREE/PRO), `isActive`, `endDate`                                   |
+| `UsageLog`       | Monthly quota tracking | unique on `(userId, month, year)`, `validationCount`                           |
+| `Report`         | A validation run       | `niche`, `keyword`, `status`, `overallScore`, `viabilityRating`, `summaryText` |
+| `PaymentRequest` | Bank-transfer upgrade  | `transactionId`, `invoicePath`, `status`, `rejectedReason`                     |
 
 `Report` stores its analysis in JSONB columns: `trendsData`, `aiInsights`,
 `competitionData`, `monetizationIdeas`, `gtmStrategy`. See
@@ -82,23 +82,23 @@ All child relations cascade on user delete.
 
 ## Tech Stack
 
-| Layer | Choice |
-| --- | --- |
-| Framework | Next.js 16 (App Router), React 19 |
-| Language | TypeScript 5, `strict: true` |
-| Styling | Tailwind CSS v4 (CSS-first, no config file), `tw-animate-css` |
-| UI | shadcn/ui (style `radix-nova`, base neutral), `radix-ui`, `lucide-react` |
-| Forms | react-hook-form + zod via `@hookform/resolvers` |
-| Auth | NextAuth v5 beta, credentials provider, `@auth/prisma-adapter`, bcryptjs |
-| Database | PostgreSQL via Prisma 7 with the `@prisma/adapter-pg` driver adapter |
-| Notifications | sonner / react-hot-toast |
-| Charts (planned) | recharts |
-| AI (planned) | openai |
-| Data sources (planned) | google-trends-api, axios |
-| Export (planned) | jspdf, jspdf-autotable |
-| Scheduling (planned) | node-cron |
-| Package manager | bun 1.3.8 |
-| Tests | **none installed** |
+| Layer                  | Choice                                                                   |
+| ---------------------- | ------------------------------------------------------------------------ |
+| Framework              | Next.js 16 (App Router), React 19                                        |
+| Language               | TypeScript 5, `strict: true`                                             |
+| Styling                | Tailwind CSS v4 (CSS-first, no config file), `tw-animate-css`            |
+| UI                     | shadcn/ui (style `radix-nova`, base neutral), `radix-ui`, `lucide-react` |
+| Forms                  | react-hook-form + zod via `@hookform/resolvers`                          |
+| Auth                   | NextAuth v5 beta, credentials provider, `@auth/prisma-adapter`, bcryptjs |
+| Database               | PostgreSQL via Prisma 7 with the `@prisma/adapter-pg` driver adapter     |
+| Notifications          | sonner / react-hot-toast                                                 |
+| Charts (planned)       | recharts                                                                 |
+| AI (planned)           | openai                                                                   |
+| Data sources (planned) | google-trends-api, axios                                                 |
+| Export (planned)       | jspdf, jspdf-autotable                                                   |
+| Scheduling (planned)   | node-cron                                                                |
+| Package manager        | bun 1.3.8                                                                |
+| Tests                  | **none installed**                                                       |
 
 Prisma 7 specifics that break v6 habits: the datasource block holds `provider` only (the URL
 lives in `prisma.config.ts`), the generator is `prisma-client` with a required `output`

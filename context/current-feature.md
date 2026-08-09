@@ -41,23 +41,23 @@ Done:
 - **All database access is behind `lib/data/`.** Pages and route handlers call functions
   there; nothing under `app/` or `components/` imports Prisma, enforced by ESLint. See
   the architecture direction in `project-overview.md` for why.
+- Route tests mock `lib/data` and cover the handler's own job — auth, validation, error
+  mapping, response shape. Query and write shapes are tested in `lib/data/*.test.ts`.
+  116 unit tests, 22 E2E.
 
 Next, in order:
 
-1. **Retarget the `validate` and `register` route tests at `lib/data`.** They still mock
-   `@/lib/prisma` and assert on Prisma call shapes, so they now reach through an extra
-   layer. They pass, but they are testing the data layer's queries rather than the
-   handler's own job — auth, input validation, response shape. `app/api/reports/route.test.ts`
-   and `lib/data/reports.test.ts` are the pattern: mock the seam, and test queries where
-   they live.
+1. **`/dashboard/reports`** — a placeholder stub exists but is not wired up. It should
+   list the caller's reports via `listReports`, and is linked from both "View All" and
+   the sidebar. The dashboard's `RecentReports` is the component to reuse or extract
+   from. `/dashboard/settings` is a stub too, with no design decided.
 2. Build out `/dashboard/reports/[id]`. It must handle `PENDING`/`PROCESSING` and respect
    `isFallback` and `partialData` rather than presenting template output as analysis.
-3. `/dashboard/reports` — the "View All" link in `RecentReports` still 404s.
-4. Replace the placeholder props on `/admin` with real queries.
-5. Reddit analysis, competition, and PDF export — none started.
+3. Replace the placeholder props on `/admin` with real queries.
+4. Reddit analysis, competition, and PDF export — none started.
 
-Dead links, all landing on the 404 page: `/dashboard/reports`, `/dashboard/settings`,
-`/admin/users`, `/admin/analytics`, `/admin/settings`, `/admin/payment-requests`.
+Dead links, all landing on the 404 page: `/admin/users`, `/admin/analytics`,
+`/admin/settings`, `/admin/payment-requests`.
 
 ## Notes
 
@@ -97,6 +97,12 @@ every model in the chain and silently dropped every report to the boilerplate te
 `lib/openai/index.test.ts` guards both.
 
 See `docs/lessons-learned.md` for the full write-up of these and how they were found.
+
+**Adding a query means adding a function to `lib/data/`, not calling Prisma.** ESLint
+blocks the import anywhere under `app/` or `components/`. Pass `userId` as an argument so
+the ownership scope is part of the signature rather than a `where` clause a caller can
+forget — `getReport(id, userId)` is the shape. Test the query in `lib/data/*.test.ts` and
+mock `lib/data` in the route or page test.
 
 The Prisma client is generated as CommonJS (`moduleFormat = "cjs"`), because `package.json`
 declares no `"type": "module"`. ESM output could not be imported from Playwright specs at
@@ -142,3 +148,5 @@ pipeline against the real services. Prefer one real run over another mock.
 - `274d070` admin and user areas linked in both directions, gated on role
 - `GET /api/reports`, `lib/data/` for every query, and an ESLint rule keeping Prisma out
   of `app/` — the first step toward a backend that can move
+- `d3a7698` route tests retargeted at `lib/data`; query and write shapes now tested where
+  they live

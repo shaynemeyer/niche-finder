@@ -15,9 +15,9 @@ export type { AIMarketInsights } from '@/lib/validations/insights';
  * Model used for insight generation, overridable with OPENAI_MODEL so it can
  * be changed per environment without a deploy.
  *
- * The default is a dated pin rather than a floating alias like
- * `gpt-4-turbo-preview`: an alias can change under you and silently alter both
- * output and cost.
+ * Avoid `-preview` aliases like `gpt-4-turbo-preview`: they can change under
+ * you and silently alter both output and cost. Pin a dated snapshot via
+ * OPENAI_MODEL where that matters.
  */
 const DEFAULT_MODEL = 'gpt-5-nano';
 

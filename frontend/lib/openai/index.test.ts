@@ -323,15 +323,16 @@ describe('OpenAIService', () => {
       delete process.env.OPENAI_FALLBACK_MODELS;
     });
 
-    it('uses a dated default rather than a floating preview alias', async () => {
+    it('defaults to a stable model rather than a preview alias', async () => {
       create.mockResolvedValueOnce(ok);
       const service = new OpenAIService();
 
       await service.generateMarketInsights('n', 'k', trends());
 
+      // A `-preview` alias can change under you, altering output and cost.
       const model = create.mock.calls[0][0].model as string;
       expect(model).not.toContain('preview');
-      expect(model).toMatch(/^gpt-4-turbo-\d{4}-\d{2}-\d{2}$/);
+      expect(model).toBe('gpt-5-nano');
     });
 
     it('honours OPENAI_MODEL', async () => {

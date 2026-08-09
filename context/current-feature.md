@@ -54,6 +54,13 @@ Done:
   analysis. `getReport`'s `select` widened to include `trendsData`, `aiInsights`,
   scores, and `createdAt`. Verified in the browser against a real completed report and
   a real fallback report, 2026-08-09.
+- **Checked against the original design mockup** (`report-details-1.png`). Search trend
+  bars now color nonzero values blue instead of all-gray, matching the mockup and the
+  "gray means zero volume" note beneath the chart. Business idea cards got the
+  mockup's "Idea # • difficulty" footer and a disabled Save Idea button — disabled for
+  the same reason as Export PDF/Share, no backend to save an idea to yet. Kept the
+  Competition, Monetization, and Related Searches sections the mockup doesn't show:
+  they render real `AIMarketInsights`/trends fields the pipeline already produces.
 
 Next, in order:
 
@@ -158,3 +165,6 @@ pipeline against the real services. Prefer one real run over another mock.
   components extracted
 - `55908ad` `/dashboard/reports/[id]` built out: one component per section, real trends
   and AI insights data, fallback/partial-data handling
+- `073f093` fixed search trend bars to color nonzero values blue instead of all-gray
+- `c89a0a7` added the idea #/difficulty footer and disabled Save Idea button, matching
+  the design mockup

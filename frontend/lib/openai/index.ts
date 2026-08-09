@@ -19,14 +19,14 @@ export type { AIMarketInsights } from '@/lib/validations/insights';
  * `gpt-4-turbo-preview`: an alias can change under you and silently alter both
  * output and cost.
  */
-const DEFAULT_MODEL = 'gpt-4-turbo-2024-04-09';
+const DEFAULT_MODEL = 'gpt-5-nano';
 
 /**
  * Tried in order when the primary model fails. A model can be deprecated,
  * overloaded, or unavailable to a given key, and none of those are reasons to
  * drop the user all the way to the boilerplate fallback.
  */
-const DEFAULT_FALLBACK_MODELS = ['gpt-4o-mini'];
+const DEFAULT_FALLBACK_MODELS = ['gpt-5-mini'];
 
 /** Comma-separated env list to array, empty entries dropped. */
 function parseModelList(value: string | undefined): string[] {
@@ -98,7 +98,9 @@ export class OpenAIService {
           // score would come from zeroed inputs. Drop it rather than show it.
           opportunityAssessment: {
             ...parsed.opportunityAssessment,
-            score: trendsData.partial ? null : parsed.opportunityAssessment.score,
+            score: trendsData.partial
+              ? null
+              : parsed.opportunityAssessment.score,
           },
           wordCount: this.countWords(parsed),
           isFallback: false,
@@ -144,7 +146,10 @@ export class OpenAIService {
       // max_tokens is deprecated in the SDK and rejected by reasoning models.
       max_completion_tokens: maxTokens,
       temperature: 0.7,
-      response_format: zodResponseFormat(modelInsightsSchema, 'market_insights'),
+      response_format: zodResponseFormat(
+        modelInsightsSchema,
+        'market_insights',
+      ),
     });
 
     // choices can be empty; indexing it unguarded throws a TypeError that
@@ -178,7 +183,11 @@ export class OpenAIService {
     const clamp = (value: number) => Math.min(1, Math.max(0, value));
 
     const trend =
-      trendsData.trend === 'rising' ? 1 : trendsData.trend === 'stable' ? 0.5 : 0;
+      trendsData.trend === 'rising'
+        ? 1
+        : trendsData.trend === 'stable'
+          ? 0.5
+          : 0;
     const interest = clamp(trendsData.averageInterest / 100);
     // -50% growth scores 0, +100% scores 1.
     const growth = clamp((trendsData.growthRate + 50) / 150);
@@ -203,7 +212,10 @@ export class OpenAIService {
     }
 
     if (Array.isArray(value)) {
-      return value.reduce<number>((sum, item) => sum + this.countWords(item), 0);
+      return value.reduce<number>(
+        (sum, item) => sum + this.countWords(item),
+        0,
+      );
     }
 
     if (value && typeof value === 'object') {

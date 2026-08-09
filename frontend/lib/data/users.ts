@@ -5,6 +5,20 @@
 import { prisma } from '@/lib/prisma';
 import { Role } from '@/lib/generated/prisma/client';
 
+/** Profile fields for the account settings page. Never selects the password hash. */
+export function getUserProfile(userId: string) {
+  return prisma.user.findUnique({
+    where: { id: userId },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      role: true,
+      createdAt: true,
+    },
+  });
+}
+
 /**
  * Creates a user with the FREE subscription and usage row that every account
  * needs, in one nested write rather than three sequential calls — a failure

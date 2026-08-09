@@ -7,6 +7,7 @@ import {
   ViabilityBadge,
 } from '@/components/dashboard/report-status-badge';
 import { ReportProgressBar } from '@/components/dashboard/report-progress-bar';
+import { DeleteReportButton } from '@/components/dashboard/delete-report-button';
 import { Button } from '@/components/ui/button';
 import type { ReportListItem } from '@/lib/data/reports';
 
@@ -69,12 +70,15 @@ export function ReportRow({
       </div>
 
       {actions && (
-        <Button asChild variant="outline" size="sm">
-          <Link href={`/dashboard/reports/${report.id}`}>
-            <Eye data-icon="inline-start" />
-            View
-          </Link>
-        </Button>
+        <div className="flex items-center gap-2 shrink-0">
+          <Button asChild variant="outline" size="sm">
+            <Link href={`/dashboard/reports/${report.id}`}>
+              <Eye data-icon="inline-start" />
+              View
+            </Link>
+          </Button>
+          <DeleteReportButton reportId={report.id} niche={report.niche} />
+        </div>
       )}
     </div>
   );

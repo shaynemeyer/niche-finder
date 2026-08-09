@@ -116,6 +116,55 @@ test.describe('report detail access', () => {
     ).toBeVisible();
   });
 
+  test('deletes a report the user owns, after confirming', async ({ page }) => {
+    // Unique per run: the row is deleted rather than cleaned up, so a failed
+    // run would otherwise leave a duplicate that breaks the next one.
+    const niche = `Doomed niche ${Date.now()}`;
+    await seedReport(userEmail, niche, 'doomed');
+    await signIn(page, userEmail, userPassword);
+    await page.goto('/dashboard/reports');
+
+    // The aria-label carries the niche, so this targets the right row without
+    // depending on the surrounding markup.
+    await page.getByRole('button', { name: `Delete ${niche}` }).click();
+
+    // The dialog names the report, so the user cannot confirm the wrong row.
+    const dialog = page.getByRole('alertdialog');
+    await expect(dialog).toContainText(niche);
+    await dialog.getByRole('button', { name: 'Delete report' }).click();
+
+    await expect(page.getByRole('heading', { name: niche })).toHaveCount(0);
+  });
+
+  test('keeps the report when the dialog is cancelled', async ({ page }) => {
+    await signIn(page, userEmail, userPassword);
+    await page.goto('/dashboard/reports');
+
+    await page
+      .getByRole('button', { name: 'Delete User own niche' })
+      .click();
+    await page
+      .getByRole('alertdialog')
+      .getByRole('button', { name: 'Cancel' })
+      .click();
+
+    // The row heading, not the dialog copy — the dialog also contains the name.
+    await expect(
+      page.getByRole('heading', { name: 'User own niche' }),
+    ).toBeVisible();
+  });
+
+  test("refuses to delete another account's report", async ({ page }) => {
+    await signIn(page, userEmail, userPassword);
+
+    const response = await page.request.delete(
+      `/api/reports/${adminReportId}`,
+    );
+
+    // 404 rather than 403: a guessed id must not reveal that it exists.
+    expect(response.status()).toBe(404);
+  });
+
   test('redirects an anonymous visitor to sign-in', async ({ page }) => {
     await page.context().clearCookies();
 

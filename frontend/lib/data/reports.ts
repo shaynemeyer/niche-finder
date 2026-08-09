@@ -90,6 +90,23 @@ export function getReport(id: string, userId: string) {
   });
 }
 
+/**
+ * Deletes a report the user owns. Returns false when it does not exist or
+ * belongs to someone else — the caller cannot tell those apart, so a guessed
+ * id reveals nothing.
+ *
+ * deleteMany rather than findFirst-then-delete: one statement, and the userId
+ * is part of the delete itself, so there is no window where ownership passes
+ * and the delete then hits a different row.
+ */
+export async function deleteReport(
+  id: string,
+  userId: string,
+): Promise<boolean> {
+  const { count } = await prisma.report.deleteMany({ where: { id, userId } });
+  return count > 0;
+}
+
 /** Validations used in the current calendar month; 0 when no row exists yet. */
 export async function getMonthlyUsage(
   userId: string,

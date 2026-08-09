@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const findMany = vi.fn();
 const findFirst = vi.fn();
 const count = vi.fn();
+const deleteMany = vi.fn();
 const findUnique = vi.fn();
 const subscriptionFindUnique = vi.fn();
 const usageUpsert = vi.fn();
@@ -14,6 +15,7 @@ vi.mock('@/lib/prisma', () => ({
       findMany: (...args: unknown[]) => findMany(...args),
       findFirst: (...args: unknown[]) => findFirst(...args),
       count: (...args: unknown[]) => count(...args),
+      deleteMany: (...args: unknown[]) => deleteMany(...args),
     },
     subscription: {
       findUnique: (...args: unknown[]) => subscriptionFindUnique(...args),
@@ -29,6 +31,7 @@ vi.mock('@/lib/prisma', () => ({
 import {
   claimMonthlyValidation,
   countReports,
+  deleteReport,
   getMonthlyUsage,
   getReport,
   isProUser,
@@ -153,6 +156,33 @@ describe('getReport', () => {
 
   it('returns null for a foreign or missing report', async () => {
     await expect(getReport('report-1', 'user-1')).resolves.toBeNull();
+  });
+});
+
+describe('deleteReport', () => {
+  it('scopes the delete by user, not just id', async () => {
+    deleteMany.mockResolvedValue({ count: 1 });
+
+    await deleteReport('report-1', 'user-1');
+
+    // userId is part of the delete itself, so there is no window where an
+    // ownership check passes and the delete then hits a different row.
+    expect(deleteMany.mock.calls[0][0].where).toEqual({
+      id: 'report-1',
+      userId: 'user-1',
+    });
+  });
+
+  it('is true when a row was removed', async () => {
+    deleteMany.mockResolvedValue({ count: 1 });
+
+    await expect(deleteReport('report-1', 'user-1')).resolves.toBe(true);
+  });
+
+  it('is false for a missing or foreign report', async () => {
+    deleteMany.mockResolvedValue({ count: 0 });
+
+    await expect(deleteReport('report-1', 'user-1')).resolves.toBe(false);
   });
 });
 

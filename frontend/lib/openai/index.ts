@@ -36,10 +36,20 @@ function parseModelList(value: string | undefined): string[] {
     .filter(Boolean);
 }
 
-/** Response ceiling. JSON keys and punctuation consume budget without
- * producing prose, so leave headroom above the requested word count -
- * a truncated response is invalid JSON and lands in the fallback. */
-const MAX_TOKENS = { free: 800, pro: 3000 } as const;
+/**
+ * Response ceiling. JSON keys and punctuation consume budget without producing
+ * prose, so leave headroom above the requested word count - a truncated
+ * response is invalid JSON and lands in the fallback.
+ *
+ * The gpt-5 models are reasoning models: max_completion_tokens covers internal
+ * reasoning *plus* the visible response, and reasoning is charged first. At the
+ * previous free-tier ceiling of 800, reasoning consumed the entire budget and
+ * the API returned finish_reason "length" with empty content - every report
+ * silently fell through to the boilerplate template. Measured against
+ * gpt-5-nano, a report of this shape spends roughly 2,200 tokens reasoning
+ * before emitting anything, so these leave room for that plus the output.
+ */
+const MAX_TOKENS = { free: 6000, pro: 12000 } as const;
 const WORD_LIMIT = { free: 500, pro: 2000 } as const;
 
 /**
@@ -157,9 +167,17 @@ export class OpenAIService {
 
     // choices can be empty; indexing it unguarded throws a TypeError that
     // would be indistinguishable from a network failure.
-    const content = response.choices[0]?.message?.content;
+    const choice = response.choices[0];
+    const content = choice?.message?.content;
     if (!content) {
-      throw new Error('No response from OpenAI');
+      // finish_reason "length" here means reasoning tokens exhausted
+      // max_completion_tokens before any visible output — naming it saves
+      // rediscovering that from an empty-response message.
+      throw new Error(
+        choice?.finish_reason === 'length'
+          ? `Response truncated before any content: reasoning used the whole ${maxTokens}-token budget. Raise MAX_TOKENS.`
+          : 'No response from OpenAI',
+      );
     }
 
     // Parsed rather than cast: the schema is enforced by the API and re-checked

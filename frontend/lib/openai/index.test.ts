@@ -335,6 +335,40 @@ describe('OpenAIService', () => {
       expect(model).toBe('gpt-5-nano');
     });
 
+    it('budgets enough tokens for reasoning models to emit content', async () => {
+      create.mockResolvedValueOnce(ok);
+      const service = new OpenAIService();
+
+      await service.generateMarketInsights('n', 'k', trends());
+
+      // gpt-5 models charge reasoning against max_completion_tokens before any
+      // visible output. At 800 the whole budget went to reasoning, content came
+      // back empty, and every report fell through to the boilerplate template.
+      // Measured: a report of this shape reasons for roughly 2,200 tokens.
+      const budget = create.mock.calls[0][0].max_completion_tokens as number;
+      expect(budget).toBeGreaterThan(3000);
+    });
+
+    it('names the budget as the cause when reasoning truncates the response', async () => {
+      create.mockResolvedValue({
+        choices: [{ message: { content: '' }, finish_reason: 'length' }],
+      });
+      const errorSpy = vi
+        .spyOn(console, 'error')
+        .mockImplementation(() => undefined);
+      const service = new OpenAIService();
+
+      const result = await service.generateMarketInsights('n', 'k', trends());
+
+      // Falls back rather than throwing, but the log has to say why.
+      expect(result.isFallback).toBe(true);
+      expect(
+        errorSpy.mock.calls.flat().map(String).join(' '),
+      ).toMatch(/reasoning used the whole \d+-token budget/);
+
+      errorSpy.mockRestore();
+    });
+
     it('sends no temperature, which gpt-5 models reject outright', async () => {
       create.mockResolvedValueOnce(ok);
       const service = new OpenAIService();

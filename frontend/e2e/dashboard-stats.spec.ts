@@ -91,11 +91,15 @@ test.describe('dashboard stats', () => {
 
     // The list below shows 5. Deriving the totals from it — which the page
     // used to do — pins both figures at 5 for anyone past the cap.
-    await expect(statValue(page, 'Total Validations')).toHaveText(
+    await expect(statValue(page, 'Total Reports')).toHaveText(
       String(TOTAL_REPORTS),
     );
-    await expect(statValue(page, 'Completed')).toHaveText(
+    await expect(statValue(page, 'Completed Reports')).toHaveText(
       String(COMPLETED_REPORTS),
+    );
+    // Fixtures are created now, so every one falls in the current month.
+    await expect(statValue(page, 'Reports This Month')).toHaveText(
+      String(TOTAL_REPORTS),
     );
   });
 

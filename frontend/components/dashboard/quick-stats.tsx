@@ -16,9 +16,11 @@ type QuickStatsProps = {
 export function QuickStats({ total, thisMonth, completed }: QuickStatsProps) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-      <StatCard label="Total Validations" value={total} />
-      <StatCard label="This Month" value={thisMonth} />
-      <StatCard label="Completed" value={completed} />
+      {/* All three count reports, so they say so — "Total Validations" next to
+          "This Month" left it ambiguous which thing was being counted. */}
+      <StatCard label="Total Reports" value={total} />
+      <StatCard label="Reports This Month" value={thisMonth} />
+      <StatCard label="Completed Reports" value={completed} />
     </div>
   );
 }

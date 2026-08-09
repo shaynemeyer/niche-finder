@@ -55,18 +55,27 @@ export function listReports(
 }
 
 /**
- * Total reports for a user, optionally by status.
+ * Total reports for a user, optionally by status and/or created since a date.
  *
  * Counted in the database rather than derived from listReports: that list is
  * capped, so `reports.length` silently means "at most the limit".
  */
 export function countReports(
   userId: string,
-  status?: ReportStatus,
+  { status, since }: { status?: ReportStatus; since?: Date } = {},
 ): Promise<number> {
   return prisma.report.count({
-    where: { userId, ...(status ? { status } : {}) },
+    where: {
+      userId,
+      ...(status ? { status } : {}),
+      ...(since ? { createdAt: { gte: since } } : {}),
+    },
   });
+}
+
+/** First instant of the month containing `now`, in local time. */
+export function startOfMonth(now: Date = new Date()): Date {
+  return new Date(now.getFullYear(), now.getMonth(), 1);
 }
 
 /**

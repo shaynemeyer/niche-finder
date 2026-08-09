@@ -32,9 +32,13 @@ export function PlanBadge({
         <span className="text-sm font-medium text-foreground">
           {isPro ? 'Pro' : 'Free'}
         </span>
-        <span className="ml-auto text-xs text-muted-foreground">
-          {limit === null ? `${used} this month` : `${used}/${limit}`}
-        </span>
+        {/* Only the free tier gets a figure. A bare count on PRO has no
+            reference point — see docs/todos.md for what to show instead. */}
+        {!isPro && (
+          <span className="ml-auto text-xs text-muted-foreground">
+            {used}/{limit}
+          </span>
+        )}
       </div>
 
       {!isPro && (

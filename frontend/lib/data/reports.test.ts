@@ -33,6 +33,7 @@ import {
   getReport,
   isProUser,
   listReports,
+  startOfMonth,
 } from './reports';
 
 beforeEach(() => {
@@ -108,10 +109,33 @@ describe('countReports', () => {
     await countReports('user-1');
     expect(count.mock.calls[0][0].where).not.toHaveProperty('status');
 
-    await countReports('user-1', 'COMPLETED');
+    await countReports('user-1', { status: 'COMPLETED' });
     expect(count.mock.calls[1][0].where).toMatchObject({
       status: 'COMPLETED',
     });
+  });
+
+  it('filters by created-since only when given', async () => {
+    await countReports('user-1');
+    expect(count.mock.calls[0][0].where).not.toHaveProperty('createdAt');
+
+    const since = new Date('2026-08-01T00:00:00Z');
+    await countReports('user-1', { since });
+    expect(count.mock.calls[1][0].where).toMatchObject({
+      createdAt: { gte: since },
+    });
+  });
+});
+
+describe('startOfMonth', () => {
+  it('returns midnight on the first of the month', () => {
+    const result = startOfMonth(new Date(2026, 7, 9, 14, 30));
+
+    // Local time, matching how createdAt is compared.
+    expect(result.getFullYear()).toBe(2026);
+    expect(result.getMonth()).toBe(7);
+    expect(result.getDate()).toBe(1);
+    expect(result.getHours()).toBe(0);
   });
 });
 

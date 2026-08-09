@@ -1,11 +1,7 @@
 import { redirect } from 'next/navigation';
 
 import { auth } from '@/lib/auth';
-import {
-  countReports,
-  getMonthlyUsage,
-  listReports,
-} from '@/lib/data/reports';
+import { countReports, listReports, startOfMonth } from '@/lib/data/reports';
 import { ReportStatus } from '@/lib/generated/prisma/client';
 import { WelcomeHeader } from '@/components/dashboard/welcome-header';
 import { PendingPaymentNotice } from '@/components/dashboard/pending-payment-notice';
@@ -27,12 +23,17 @@ export default async function DashboardPage() {
 
   // Counts come from the database, not from `reports` — that list is capped at
   // 5, so deriving totals from it reports "5" for anyone with more.
-  const [reports, used, totalReports, completedReports] = await Promise.all([
-    listReports(userId, { limit: 5 }),
-    getMonthlyUsage(userId),
-    countReports(userId),
-    countReports(userId, ReportStatus.COMPLETED),
-  ]);
+  //
+  // "This month" counts reports rather than reading UsageLog: the label says
+  // reports, UsageLog is the quota ledger, and the two legitimately differ —
+  // a failed validation spends a slot but still leaves a FAILED report.
+  const [reports, totalReports, completedReports, thisMonthReports] =
+    await Promise.all([
+      listReports(userId, { limit: 5 }),
+      countReports(userId),
+      countReports(userId, { status: ReportStatus.COMPLETED }),
+      countReports(userId, { since: startOfMonth() }),
+    ]);
 
 
   // Recomputed on every refresh, so the poller stops once the last report
@@ -57,7 +58,7 @@ export default async function DashboardPage() {
 
       <QuickStats
         total={totalReports}
-        thisMonth={used}
+        thisMonth={thisMonthReports}
         completed={completedReports}
       />
     </div>

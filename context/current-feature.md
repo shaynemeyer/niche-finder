@@ -33,17 +33,17 @@ Done:
 - `/dashboard/reports/[id]` — placeholder showing niche, keyword, id and status. The
   query is scoped to the session user; 4 E2E specs cover the ownership boundary.
 - `app/not-found.tsx` — 404 page for unmatched URLs and `notFound()` calls.
+- **The pipeline runs end to end.** A live validation stores `isFallback: false`,
+  `model: gpt-5-nano`, a real score and a ~1,000-word generated summary. Confirmed
+  2026-08-09 against Trends and OpenAI, not mocks.
 
 Next, in order:
 
-1. Run the pipeline for real once. Every test mocks or intercepts the services, so no
-   validation has yet called Trends and OpenAI end to end. Two bugs have already been
-   caught only by running it (see History), so this is the highest-value step.
-2. Build out `/dashboard/reports/[id]`. It must handle `PENDING`/`PROCESSING` and respect
+1. Build out `/dashboard/reports/[id]`. It must handle `PENDING`/`PROCESSING` and respect
    `isFallback` and `partialData` rather than presenting template output as analysis.
-3. `/dashboard/reports` — the "View All" link in `RecentReports` still 404s.
-4. Replace the placeholder props on `/admin` with real queries.
-5. Reddit analysis, competition, and PDF export — none started.
+2. `/dashboard/reports` — the "View All" link in `RecentReports` still 404s.
+3. Replace the placeholder props on `/admin` with real queries.
+4. Reddit analysis, competition, and PDF export — none started.
 
 Housekeeping: `react-hot-toast` is now unused and can be dropped from `package.json`.
 
@@ -76,10 +76,15 @@ consumes one; whether that should be refunded is undecided.
 `docs/report-queue-design.md` records the queue this becomes when upstream rate limits or
 invocation cost start to bind, and why neither is the constraint yet.
 
-**Never send `temperature` to the OpenAI service.** gpt-5 models accept only the default of
-1 and reject any explicit value with a 400 — which failed every model in the fallback chain
-and silently dropped every report to the boilerplate template. Steer output through the
-prompt. `lib/openai/index.test.ts` asserts the parameter is absent.
+**The gpt-5 models are reasoning models, and two settings follow from that.** Never send
+`temperature`: they accept only the default of 1 and reject any explicit value with a 400.
+And `max_completion_tokens` covers internal reasoning *plus* the visible response, with
+reasoning charged first — at the old 800-token ceiling reasoning consumed the whole budget
+and the API returned `finish_reason: "length"` with empty content. Both failures took out
+every model in the chain and silently dropped every report to the boilerplate template.
+`lib/openai/index.test.ts` guards both.
+
+See `docs/lessons-learned.md` for the full write-up of these and how they were found.
 
 The Prisma client is generated as CommonJS (`moduleFormat = "cjs"`), because `package.json`
 declares no `"type": "module"`. ESM output could not be imported from Playwright specs at
@@ -119,3 +124,5 @@ pipeline against the real services. Prefer one real run over another mock.
 - `dff33d0` spinner badge, indeterminate progress bar and submit toast for running reports
 - `74a5839` placeholder `/dashboard/reports/[id]` with an ownership-scoped query, plus a
   404 page and 4 access-control E2E specs
+- `ed52ce2` raised the token budget so gpt-5 reasoning leaves room for a response — the
+  last of three silent bugs between the pipeline and real insights

@@ -199,7 +199,29 @@ the choice here:
 
 - Server actions (none written; all mutations go through `app/api/` route handlers)
 - Data fetching and caching strategy for report pages
-- Loading / error / not-found route files (`loading.tsx`, `error.tsx`, `not-found.tsx`)
-- Toast usage — both `sonner` and `react-hot-toast` are installed and neither is used
+- `loading.tsx` and `error.tsx` route files (none written)
 
 Testing conventions **are** established — see `context/testing-instructions.md`.
+
+## Toasts
+
+**Use `sonner`.** `react-hot-toast` was removed once the first real case arrived — keeping
+two toast libraries meant every future call site was a coin flip.
+
+`<Toaster />` is mounted in `app/providers.tsx`, inside `ThemeProvider` because the shadcn
+wrapper reads `useTheme()` for dark mode. Import `toast` from `sonner` directly; the
+primitive in `components/ui/sonner.tsx` is the styled Toaster, not the function.
+
+A toast confirms something happened out of view. It is not a substitute for showing state
+in place — `ValidationForm` raises one on submit *and* the new report renders with a
+spinner and progress bar in the list below.
+
+## Not-found pages
+
+`app/not-found.tsx` covers both unmatched URLs and `notFound()` thrown from a route
+segment. Prefer it over `global-not-found.tsx`, which is experimental, aimed at apps with
+multiple root layouts, and bypasses the layout — meaning global styles and the theme would
+have to be re-applied by hand.
+
+`notFound()` in a streamed dynamic route responds **200** and renders the not-found body;
+only non-streamed responses return a 404 status. Assert on content, not status.

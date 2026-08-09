@@ -58,14 +58,23 @@ Done:
   bars now color nonzero values blue instead of all-gray, matching the mockup and the
   "gray means zero volume" note beneath the chart. Business idea cards got the
   mockup's "Idea # • difficulty" footer and a disabled Save Idea button — disabled for
-  the same reason as Export PDF/Share, no backend to save an idea to yet. Kept the
+  the same reason Save Idea/Share are, no backend to save an idea to yet. Kept the
   Competition, Monetization, and Related Searches sections the mockup doesn't show:
   they render real `AIMarketInsights`/trends fields the pipeline already produces.
+- **PDF export** — `lib/pdf/exportPDF.ts` builds a multi-page PDF (jsPDF +
+  jspdf-autotable) from a completed report: overview, opportunity assessment,
+  trends table, top related queries, business ideas, GTM strategy, risks/
+  recommendations, paginated footer. `ReportActions` is a client component (jsPDF
+  needs the DOM) wired to both toolbar instances on `/dashboard/reports/[id]`; both
+  are only reached past the `FAILED`/null-data guard, so `trends`/`insights` are
+  always populated when it renders. Verified against a real completed report in the
+  browser: 4-page PDF, correct data throughout, no console errors. Share stays
+  disabled — not built.
 
 Next, in order:
 
 1. Replace the placeholder props on `/admin` with real queries.
-2. Reddit analysis, competition, and PDF export — none started.
+2. Reddit analysis and competition — not started.
 
 Dead links, all landing on the 404 page: `/admin/users`, `/admin/analytics`,
 `/admin/settings`, `/admin/payment-requests`.
@@ -168,3 +177,9 @@ pipeline against the real services. Prefer one real run over another mock.
 - `073f093` fixed search trend bars to color nonzero values blue instead of all-gray
 - `c89a0a7` added the idea #/difficulty footer and disabled Save Idea button, matching
   the design mockup
+- `a8b0784` recorded the design mockup comparison in this file
+- `509218b` PDF export wired up on the report detail page: `lib/pdf/exportPDF.ts`,
+  `ReportActions` made a client component to call it
+- settings page split into one component per section
+  (`components/dashboard/settings/`), literal colors replaced with theme tokens so
+  the page renders correctly in dark mode

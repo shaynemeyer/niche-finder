@@ -79,7 +79,15 @@ export default async function ReportDetailPage(
     <div className="max-w-7xl mx-auto space-y-6">
       <div className="flex items-center justify-between">
         <BackLink />
-        <ReportActions />
+        <ReportActions
+          niche={report.niche}
+          keyword={report.keyword}
+          status={report.status}
+          overallScore={report.overallScore}
+          viabilityRating={report.viabilityRating}
+          trends={trends}
+          insights={insights}
+        />
       </div>
 
       <ReportFallbackNotice
@@ -114,7 +122,15 @@ export default async function ReportDetailPage(
           <ArrowLeft className="w-4 h-4 mr-2" />
           Back to All Reports
         </Link>
-        <ReportActions />
+        <ReportActions
+          niche={report.niche}
+          keyword={report.keyword}
+          status={report.status}
+          overallScore={report.overallScore}
+          viabilityRating={report.viabilityRating}
+          trends={trends}
+          insights={insights}
+        />
       </div>
     </div>
   );

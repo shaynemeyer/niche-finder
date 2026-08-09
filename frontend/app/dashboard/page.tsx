@@ -1,30 +1,63 @@
 import { redirect } from 'next/navigation';
 
 import { auth } from '@/lib/auth';
+import { prisma } from '@/lib/prisma';
 import { WelcomeHeader } from '@/components/dashboard/welcome-header';
 import { PendingPaymentNotice } from '@/components/dashboard/pending-payment-notice';
 import { SubscriptionStatusCard } from '@/components/dashboard/subscription-status-card';
 import { ValidationForm } from '@/components/dashboard/validation-form';
-import {
-  RecentReports,
-  type RecentReport,
-} from '@/components/dashboard/recent-reports';
+import { RecentReports } from '@/components/dashboard/recent-reports';
+import { ReportStatusPoller } from '@/components/dashboard/report-status-poller';
 import { QuickStats } from '@/components/dashboard/quick-stats';
 import { FREE_TIER_MONTHLY_LIMIT } from '@/lib/constants';
 
-// The report pipeline does not exist yet; these stand in until it does.
-const reports: RecentReport[] = [];
-const used = 0;
 const hasPendingPayment = false;
 
 export default async function DashboardPage() {
   const session = await auth();
 
-  if (!session?.user) {
+  if (!session?.user?.id) {
     redirect('/signin');
   }
 
+  const userId = session.user.id;
+  const now = new Date();
+
+  const [reports, usage] = await Promise.all([
+    prisma.report.findMany({
+      where: { userId },
+      orderBy: { createdAt: 'desc' },
+      take: 5,
+      select: {
+        id: true,
+        niche: true,
+        keyword: true,
+        status: true,
+        createdAt: true,
+        overallScore: true,
+        viabilityRating: true,
+      },
+    }),
+    prisma.usageLog.findUnique({
+      where: {
+        userId_month_year: {
+          userId,
+          month: now.getMonth() + 1,
+          year: now.getFullYear(),
+        },
+      },
+      select: { validationCount: true },
+    }),
+  ]);
+
+  const used = usage?.validationCount ?? 0;
   const planType = session.user.subscription?.planType ?? 'FREE';
+
+  // Recomputed on every refresh, so the poller stops once the last report
+  // reaches COMPLETED or FAILED.
+  const hasUnsettledReports = reports.some(
+    (report) => report.status === 'PENDING' || report.status === 'PROCESSING',
+  );
 
   return (
     <div className="max-w-7xl mx-auto space-y-6">
@@ -39,6 +72,8 @@ export default async function DashboardPage() {
       />
 
       <ValidationForm />
+
+      <ReportStatusPoller hasUnsettledReports={hasUnsettledReports} />
 
       <RecentReports reports={reports} />
 

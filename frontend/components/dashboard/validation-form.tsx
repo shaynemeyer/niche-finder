@@ -1,5 +1,6 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Search, Sparkles } from 'lucide-react';
@@ -26,6 +27,7 @@ import {
 } from '@/lib/validations/report';
 
 export function ValidationForm() {
+  const router = useRouter();
   const form = useForm<ValidateNicheValues>({
     resolver: zodResolver(validateNicheSchema),
     defaultValues: { niche: '', keyword: '' },
@@ -35,13 +37,38 @@ export function ValidationForm() {
     register,
     handleSubmit,
     setError,
+    reset,
     formState: { errors, isSubmitting },
   } = form;
 
-  // The report pipeline has no endpoint yet, so submitting reports that
-  // rather than posting to a route that does not exist.
-  async function onSubmit() {
-    setError('root', { message: 'Niche validation is not available yet.' });
+  async function onSubmit(values: ValidateNicheValues) {
+    let response: Response;
+    try {
+      response = await fetch('/api/validate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(values),
+      });
+    } catch {
+      // fetch only rejects on a network failure, never on a 4xx/5xx.
+      setError('root', { message: 'Something went wrong. Please try again.' });
+      return;
+    }
+
+    const body = await response.json().catch(() => null);
+
+    if (!response.ok) {
+      setError('root', {
+        message: body?.error ?? 'Something went wrong. Please try again.',
+      });
+      return;
+    }
+
+    // 202: the row exists but the analysis is still running. Refreshing the
+    // server component pulls it into Recent Validations as PENDING, which
+    // already renders a status and tolerates a null score.
+    reset();
+    router.refresh();
   }
 
   return (
@@ -67,6 +94,7 @@ export function ValidationForm() {
                 placeholder="e.g., AI productivity tools for writers"
                 aria-invalid={!!errors.niche}
                 {...register('niche')}
+                disabled={isSubmitting}
               />
               <FieldDescription>
                 Describe your niche in a few words
@@ -81,6 +109,7 @@ export function ValidationForm() {
                 placeholder="e.g., AI writing assistant"
                 aria-invalid={!!errors.keyword}
                 {...register('keyword')}
+                disabled={isSubmitting}
               />
               <FieldDescription>
                 The main keyword people would search for

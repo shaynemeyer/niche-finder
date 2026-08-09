@@ -82,11 +82,27 @@ export function startOfMonth(now: Date = new Date()): Date {
  * Scoped by userId rather than looked up on id alone: a report id is guessable
  * enough that an unscoped read would expose another account's report. Returns
  * null for both missing and foreign reports so callers cannot tell them apart.
+ *
+ * trendsData and aiInsights are the only JSONB columns the detail page reads:
+ * competitionData, monetizationIdeas and gtmStrategy duplicate sub-objects
+ * already inside aiInsights (see app/api/validate/route.ts), so there is
+ * nothing in them the page needs that aiInsights does not already have.
  */
 export function getReport(id: string, userId: string) {
   return prisma.report.findFirst({
     where: { id, userId },
-    select: { id: true, niche: true, keyword: true, status: true },
+    select: {
+      id: true,
+      niche: true,
+      keyword: true,
+      status: true,
+      overallScore: true,
+      viabilityRating: true,
+      summaryText: true,
+      trendsData: true,
+      aiInsights: true,
+      createdAt: true,
+    },
   });
 }
 

@@ -1,16 +1,23 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const create = vi.fn();
+const update = vi.fn();
 
 vi.mock('@/lib/prisma', () => ({
-  prisma: { user: { create: (...args: unknown[]) => create(...args) } },
+  prisma: {
+    user: {
+      create: (...args: unknown[]) => create(...args),
+      update: (...args: unknown[]) => update(...args),
+    },
+  },
 }));
 
-import { createUser } from './users';
+import { createUser, updateUserName } from './users';
 
 beforeEach(() => {
   vi.clearAllMocks();
   create.mockResolvedValue({ id: 'user-1' });
+  update.mockResolvedValue({ id: 'user-1', name: 'Grace Hopper' });
 });
 
 describe('createUser', () => {
@@ -58,5 +65,22 @@ describe('createUser', () => {
 
     // Registration must never be able to mint an admin.
     expect(create.mock.calls[0][0].data.role).toBe('USER');
+  });
+});
+
+describe('updateUserName', () => {
+  it('scopes the update to the given user and sets only the name', async () => {
+    await updateUserName('user-1', 'Grace Hopper');
+
+    expect(update.mock.calls[0][0]).toMatchObject({
+      where: { id: 'user-1' },
+      data: { name: 'Grace Hopper' },
+    });
+  });
+
+  it('never selects the password hash back out', async () => {
+    await updateUserName('user-1', 'Grace Hopper');
+
+    expect(update.mock.calls[0][0].select).not.toHaveProperty('password');
   });
 });

@@ -141,3 +141,14 @@
     @apply font-sans;
   }
 }
+
+/* Success toasts read as a neutral popover by default (components/ui/sonner.tsx
+   is shadcn CLI output and doesn't theme per-type). Green ties it to the
+   success icon, matching the green-50/green-950 pairing used elsewhere for
+   success/approved states (see SubscriptionSection).
+   Sonner injects its own stylesheet at runtime, after globals.css, so an
+   equal-specificity selector loses the cascade — [data-styled=true] repeats
+   the attribute selector to outweigh it without resorting to !important. */
+[data-sonner-toast][data-styled="true"].cn-toast[data-type="success"] {
+  @apply bg-green-50 dark:bg-green-950/60 text-green-800 dark:text-green-200 border-green-200 dark:border-green-900;
+}

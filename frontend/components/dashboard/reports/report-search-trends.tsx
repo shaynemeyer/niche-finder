@@ -60,7 +60,11 @@ export function ReportSearchTrends({
                 return (
                   <div key={point.time} className="flex-1 group relative h-full flex items-end">
                     <div
-                      className="w-full rounded-t transition-all bg-muted-foreground/40 hover:bg-muted-foreground/60"
+                      className={
+                        isZero
+                          ? 'w-full rounded-t transition-all bg-muted-foreground/40 hover:bg-muted-foreground/60'
+                          : 'w-full rounded-t transition-all bg-blue-500 hover:bg-blue-600'
+                      }
                       style={{ height: `${heightPct}%` }}
                     >
                       <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-foreground text-background text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10">

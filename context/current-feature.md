@@ -70,6 +70,11 @@ Done:
   always populated when it renders. Verified against a real completed report in the
   browser: 4-page PDF, correct data throughout, no console errors. Share stays
   disabled — not built.
+- **`GET /api/user/profile`** — returns the caller's `id`/`name`/`email`/`role`/
+  `createdAt` via a new `getUserProfile` in `lib/data/users.ts`. Replaces a stray
+  hand-written `route.tsx` that queried Prisma directly from `app/`, cast
+  `session.user.id` through `any`, and swallowed errors on the catch path with no
+  response. 4 unit tests.
 
 Next, in order:
 
@@ -183,3 +188,5 @@ pipeline against the real services. Prefer one real run over another mock.
 - settings page split into one component per section
   (`components/dashboard/settings/`), literal colors replaced with theme tokens so
   the page renders correctly in dark mode
+- `5c25d44` `GET /api/user/profile` added behind `lib/data/users.getUserProfile`,
+  replacing a direct-Prisma `route.tsx` with an `any` cast and a swallowed error

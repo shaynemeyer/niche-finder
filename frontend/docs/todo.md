@@ -6,12 +6,19 @@ was verified, and why it was not fixed at the time.
 Delete an entry when it is fixed. An entry that has been here a long time is either not
 actually a problem — delete it — or is being avoided, which is worth naming.
 
-## No rate limiting on authentication
+## No rate limiting anywhere
 
 Nothing limits repeated sign-in attempts, so passwords can be guessed as fast as the
-network allows. This is the largest remaining weakness in the auth surface.
+network allows. This is the largest remaining weakness in the auth surface — see
+`docs/auth-hardening-plan.md` for it and the rest of the auth work, prioritised.
 
-See `docs/auth-hardening-plan.md` for this and the rest of the auth work, prioritised.
+The API routes have the same gap, though the exposure is smaller than it first looks.
+`DELETE /api/reports/[id]` can be hammered with guessed ids: it leaks nothing and
+deletes nothing, because every miss is an indistinguishable 404, but the requests
+themselves are unbounded. `POST /api/validate` claims the quota *before* scheduling the
+analysis, so an over-quota request costs a 403 and never reaches Google Trends or
+OpenAI — the free tier is capped at three upstream runs a month by construction. A PRO
+account has no such cap, so a runaway client there is the real spend risk.
 
 ## Auth pages configured but missing
 
@@ -67,6 +74,47 @@ then a renewal line would render empty for everyone.
 Rejected while deciding: a feature list, an "unlimited ✓" marker, or usage framed as
 activity. The first two are the filler the old card was removed for; the third only becomes
 interesting at volumes a solo user will not reach soon.
+
+## `variant="destructive"` is unreadable
+
+The shadcn destructive variant renders the destructive colour as *text* on a
+`destructive/20` tint. Measured against the tokens in `globals.css`:
+
+| | Ratio | WCAG AA (4.5:1) |
+|---|---|---|
+| Dark mode | **1.54:1** | fails badly |
+| Light mode | 3.48:1 | fails |
+| Solid `bg-destructive` + white text | 10.01:1 | passes |
+
+The root cause is that dark mode's `--destructive` is *darker* than light mode's
+(`L=0.396` vs `0.637`), so the tint and the text sit almost on top of each other.
+Every other token gets lighter in dark mode.
+
+`DeleteReportButton` works around it with solid `bg-destructive text-white`. The
+better fix is to raise the dark-mode `--destructive` lightness so the variant is
+usable, but that shifts every destructive-coloured element at once and wants
+checking against the whole palette rather than one button.
+
+## Admins cannot delete another account's report
+
+`deleteReport(id, userId)` scopes by the session user regardless of role, so an
+admin deleting someone else's report gets the same 404 as anyone else. That matches
+what `project-overview.md` says admins are for — payment requests and user accounts,
+not report content — and nothing in the product needs it today.
+
+Deliberate, not an oversight: the scoping makes cross-account deletion structurally
+impossible rather than dependent on a check that a future caller could get wrong.
+
+Revisit when there is a real case — a legal removal request, an abuse report, or an
+admin cleaning up after a bug. Two things to get right then:
+
+- **Add a separate `deleteReportAsAdmin(id)` rather than making `deleteReport`'s
+  scoping conditional.** A different name and a different route keep the user-facing
+  path impossible to misuse, and make every admin call site obvious.
+- **Audit trail before hard delete.** Who removed what, and when. A silent
+  irreversible delete performed by someone other than the owner is worse than no
+  feature — that is a bigger design than a role check, which is part of why this is
+  deferred rather than half-built.
 
 ## Historical validations are uncounted
 

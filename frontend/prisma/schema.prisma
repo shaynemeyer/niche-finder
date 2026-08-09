@@ -6,6 +6,9 @@
 generator client {
   provider = "prisma-client"
   output   = "../lib/generated/prisma"
+  // The project has no "type": "module", so Node treats these files as
+  // CommonJS. Emitting ESM made the client unimportable from Playwright specs.
+  moduleFormat = "cjs"
 }
 
 datasource db {

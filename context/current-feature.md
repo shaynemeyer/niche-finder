@@ -15,19 +15,29 @@ Reddit, competition and AI insights follow.
 
 Done:
 
-- `lib/googleTrends.ts` — typed wrapper over `google-trends-api` with interest over time,
-  related queries, regional interest, and a combined `analyzeKeyword`. Unit tested.
+- `lib/trends/` — typed wrapper over `google-trends-api` with interest over time, related
+  queries, regional interest, and a combined `analyzeKeyword`. Unit tested. Needs no API
+  key; the package scrapes public endpoints.
 - `types/google-trends-api.d.ts` — ambient declarations; the package ships none and has no
   `@types` on npm.
+- `lib/openai/` — market insights over the trends result, with model fallback and a
+  built-in template when every model fails.
+- `POST /api/validate` — claims the quota, writes a `PENDING` report, schedules the
+  analysis with `after()`, returns 202. 22 unit tests.
+- `ValidationForm` posts to it and stays on the dashboard; `ReportStatusPoller` refreshes
+  while any report is unsettled. 7 E2E specs.
+- `FREE_TIER_MONTHLY_LIMIT` enforced server-side, claimed before the analysis runs.
+- `/dashboard` queries real reports and usage instead of placeholder zeros.
 
 Next, in order:
 
-1. A route handler that takes `{ niche, keyword }`, calls `analyzeKeyword`, and writes a
-   `Report` row. `lib/validations/report.ts` already has the schema.
-2. Wire `ValidationForm`'s `onSubmit` to it — it currently reports that validation is
-   unavailable.
-3. Enforce `FREE_TIER_MONTHLY_LIMIT` server-side, incrementing `UsageLog.validationCount`.
-4. Replace the placeholder props on `/dashboard` and `/admin` with real queries.
+1. `/dashboard/reports` and `/dashboard/reports/[id]` — both are linked from
+   `RecentReports` and currently 404. The detail page must handle `PENDING`/`PROCESSING`
+   and respect `isFallback` and `partialData`.
+2. Run the pipeline for real once. Every test mocks or intercepts the services, so no
+   validation has yet called Trends and OpenAI end to end.
+3. Replace the placeholder props on `/admin` with real queries.
+4. Reddit analysis, competition, and PDF export — none started.
 
 ## Notes
 
@@ -37,7 +47,26 @@ flag rather than presenting incomplete figures as fact.
 
 The three Trends calls are deliberately sequential with a 2s pause between them. They share
 one upstream rate limit and `Promise.all` is what trips it, so an `analyzeKeyword` call takes
-roughly six seconds — worth knowing before it goes behind a request handler.
+roughly six seconds. Trends plus OpenAI is roughly ten, which is why the route returns 202
+and runs the analysis in `after()` rather than holding the request open.
+
+`after()` rather than a floating promise: the callback runs inside the route's
+`maxDuration`, whereas an un-awaited call can be frozen the moment the response is sent,
+leaving reports stuck `PENDING` with no error recorded anywhere.
+
+**A score is stored only when it came from real analysis of real data.** The model withholds
+one when trends data is `partial`; the fallback template's score is a heuristic that would
+render identically to a genuine one, so `isFallback` withholds it too. `overallScore` and
+`viabilityRating` are both null in that case, and the report still completes so the trends
+half is not discarded.
+
+The quota is claimed before the analysis rather than incremented after it — incrementing
+afterwards lets two concurrent requests both read an under-limit count and proceed. A
+request that exceeds the limit releases the slot it claimed. A `FAILED` report still
+consumes one; whether that should be refunded is undecided.
+
+`docs/report-queue-design.md` records the queue this becomes when upstream rate limits or
+invocation cost start to bind, and why neither is the constraint yet.
 
 ## History
 
@@ -54,3 +83,9 @@ roughly six seconds — worth knowing before it goes behind a request handler.
 - `226960b` role-based redirect in `/signin`; dropped the separate admin login
 - `858ca58` dark mode and component split for the admin dashboard
 - `32ef125` Google Trends service with typed responses and unit tests
+- `3abb4c9` AI service modules split; two OpenAI API mismatches fixed
+- `79837b6` default models changed to gpt-5-nano / gpt-5-mini
+- `3a14aaa` OpenAI model test aligned with the current default
+- `f14eeb4` validation pipeline wired to the dashboard: `POST /api/validate`, quota
+  enforcement, real dashboard queries, status polling
+- `bdb4e7f` E2E coverage for the validation form

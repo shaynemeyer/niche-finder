@@ -33,11 +33,11 @@ export default async function ReportDetailPage(
   return (
     <div className="max-w-7xl mx-auto space-y-6">
       <Link
-        href="/dashboard"
+        href="/dashboard/reports"
         className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
       >
         <ArrowLeft className="size-4" />
-        Back to dashboard
+        Back to reports
       </Link>
 
       <Card>

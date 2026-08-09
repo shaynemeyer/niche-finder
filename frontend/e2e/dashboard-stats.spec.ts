@@ -103,6 +103,47 @@ test.describe('dashboard stats', () => {
     );
   });
 
+  test('the reports page lists every report, not just five', async ({
+    page,
+  }) => {
+    await signIn(page, userEmail, userPassword);
+    await page.goto('/dashboard/reports');
+
+    await expect(page.locator('a[href^="/dashboard/reports/"]')).toHaveCount(
+      TOTAL_REPORTS,
+    );
+  });
+
+  test('filters the reports page by status', async ({ page }) => {
+    await signIn(page, userEmail, userPassword);
+    await page.goto('/dashboard/reports?status=COMPLETED');
+
+    await expect(page.locator('a[href^="/dashboard/reports/"]')).toHaveCount(
+      COMPLETED_REPORTS,
+    );
+
+    // A filter that matches nothing must not invite the user to validate —
+    // they have reports, just none with this status.
+    await page.goto('/dashboard/reports?status=PENDING');
+    await expect(
+      page.getByRole('heading', { name: 'No matching reports' }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole('link', { name: 'Create First Validation' }),
+    ).toHaveCount(0);
+  });
+
+  test('ignores a junk status rather than showing nothing', async ({
+    page,
+  }) => {
+    await signIn(page, userEmail, userPassword);
+    await page.goto('/dashboard/reports?status=BOGUS');
+
+    await expect(page.locator('a[href^="/dashboard/reports/"]')).toHaveCount(
+      TOTAL_REPORTS,
+    );
+  });
+
   test('still lists only the five most recent reports', async ({ page }) => {
     await signIn(page, userEmail, userPassword);
 

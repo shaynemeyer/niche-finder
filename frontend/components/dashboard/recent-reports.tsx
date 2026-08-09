@@ -1,6 +1,8 @@
 import Link from 'next/link';
-import { ArrowRight, TrendingUp } from 'lucide-react';
+import { ArrowRight, Loader2, TrendingUp } from 'lucide-react';
 import type { ReportStatus } from '@/lib/generated/prisma/client';
+import { Progress } from '@/components/ui/progress';
+import { cn } from '@/lib/utils';
 
 export type RecentReport = {
   id: string;
@@ -11,6 +13,52 @@ export type RecentReport = {
   overallScore: number | null;
   viabilityRating: string | null;
 };
+
+const statusStyles: Record<ReportStatus, string> = {
+  PENDING: 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-200',
+  PROCESSING: 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-200',
+  COMPLETED: 'bg-muted text-muted-foreground',
+  FAILED: 'bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-200',
+};
+
+const statusLabels: Record<ReportStatus, string> = {
+  PENDING: 'Queued',
+  PROCESSING: 'Analyzing',
+  COMPLETED: 'Completed',
+  FAILED: 'Failed',
+};
+
+function isRunning(status: ReportStatus) {
+  return status === 'PENDING' || status === 'PROCESSING';
+}
+
+/**
+ * Indeterminate bar. The pipeline exposes no sub-step progress, so this shows
+ * that work is happening rather than how much is left.
+ *
+ * value={null} puts the Radix primitive in its indeterminate state; the sweep
+ * is ours because the shadcn indicator only translates by a numeric value.
+ */
+function ReportProgressBar() {
+  return (
+    <Progress value={null} aria-label="Analysis in progress" className="mt-2" />
+  );
+}
+
+/** Spins while the analysis is still running, so an active report reads as busy. */
+function ReportStatusBadge({ status }: { status: ReportStatus }) {
+  return (
+    <span
+      className={cn(
+        'inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium',
+        statusStyles[status],
+      )}
+    >
+      {isRunning(status) && <Loader2 className="size-3 animate-spin" />}
+      {statusLabels[status]}
+    </span>
+  );
+}
 
 const viabilityStyles: Record<string, string> = {
   HIGH: 'bg-green-100 text-green-800 dark:bg-green-950 dark:text-green-200',
@@ -76,9 +124,7 @@ export function RecentReports({
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="text-xs text-muted-foreground">
-                        {report.status}
-                      </span>
+                      <ReportStatusBadge status={report.status} />
                       <h4 className="font-medium text-foreground">
                         {report.niche}
                       </h4>
@@ -92,6 +138,7 @@ export function RecentReports({
                         <span>Score: {report.overallScore}/100</span>
                       )}
                     </div>
+                    {isRunning(report.status) && <ReportProgressBar />}
                   </div>
                   {report.viabilityRating && (
                     <div className="flex flex-col items-end gap-2">

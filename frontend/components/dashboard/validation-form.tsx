@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Search, Sparkles } from 'lucide-react';
+import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -68,6 +69,9 @@ export function ValidationForm() {
     // server component pulls it into Recent Validations as PENDING, which
     // already renders a status and tolerates a null score.
     reset();
+    toast.success('Validation started', {
+      description: 'Analyzing your niche — this takes about ten seconds.',
+    });
     router.refresh();
   }
 

@@ -5,6 +5,19 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
+  /* Indeterminate progress sweep: the report pipeline reports no percentage,
+     so the bar shows activity rather than claiming progress. */
+  --animate-progress-sweep: progress-sweep 1.4s ease-in-out infinite;
+
+  @keyframes progress-sweep {
+    0% {
+      transform: translateX(-100%);
+    }
+    100% {
+      transform: translateX(300%);
+    }
+  }
+
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);

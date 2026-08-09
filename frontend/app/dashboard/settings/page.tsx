@@ -1,3 +1,7 @@
+import { redirect } from 'next/navigation';
+
+import { auth } from '@/lib/auth';
+import { getUserProfile } from '@/lib/data/users';
 import { DangerZoneSection } from '@/components/dashboard/settings/danger-zone-section';
 import { NotificationsSection } from '@/components/dashboard/settings/notifications-section';
 import { ProfileSection } from '@/components/dashboard/settings/profile-section';
@@ -5,7 +9,19 @@ import { SecuritySection } from '@/components/dashboard/settings/security-sectio
 import { SubscriptionSection } from '@/components/dashboard/settings/subscription-section';
 import { Toaster } from '@/components/ui/sonner';
 
-function SettingsPage() {
+async function SettingsPage() {
+  const session = await auth();
+
+  if (!session?.user?.id) {
+    redirect('/signin');
+  }
+
+  const user = await getUserProfile(session.user.id);
+
+  if (!user) {
+    redirect('/signin');
+  }
+
   return (
     <>
       <Toaster position="top-right" />
@@ -17,7 +33,7 @@ function SettingsPage() {
           </p>
         </div>
 
-        <ProfileSection />
+        <ProfileSection user={user} />
         <SubscriptionSection />
         <SecuritySection />
         <NotificationsSection />

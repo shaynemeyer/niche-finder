@@ -19,6 +19,21 @@ export function getUserProfile(userId: string) {
   });
 }
 
+/** Updates the caller's display name. Email and role are not editable here. */
+export function updateUserName(userId: string, name: string) {
+  return prisma.user.update({
+    where: { id: userId },
+    data: { name },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      role: true,
+      createdAt: true,
+    },
+  });
+}
+
 /**
  * Creates a user with the FREE subscription and usage row that every account
  * needs, in one nested write rather than three sequential calls — a failure

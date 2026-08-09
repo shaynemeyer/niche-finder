@@ -30,8 +30,6 @@ Done:
 - `/dashboard` queries real reports and usage instead of placeholder zeros.
 - Running reports show a spinner badge and an indeterminate progress bar; submitting
   raises a sonner toast. `Toaster` is mounted in `app/providers.tsx`.
-- `/dashboard/reports/[id]` — placeholder showing niche, keyword, id and status. The
-  query is scoped to the session user; 4 E2E specs cover the ownership boundary.
 - `app/not-found.tsx` — 404 page for unmatched URLs and `notFound()` calls.
 - **The pipeline runs end to end.** A live validation stores `isFallback: false`,
   `model: gpt-5-nano`, a real score and a ~1,000-word generated summary. Confirmed
@@ -44,17 +42,23 @@ Done:
 - Route tests mock `lib/data` and cover the handler's own job — auth, validation, error
   mapping, response shape. Query and write shapes are tested in `lib/data/*.test.ts`.
   116 unit tests, 22 E2E.
+- `/dashboard/reports` — lists the caller's reports via `listReports`, with status
+  filtering, linked from both "View All" and the sidebar. `/dashboard/settings` is
+  still a stub, with no design decided.
+- **`/dashboard/reports/[id]`** — built out fully: hero (score/viability), key metrics,
+  opportunity assessment, search trends (timeline chart + related queries), target
+  audience, competition, monetization, business ideas, and GTM strategy, each its own
+  component under `components/dashboard/reports/`. Handles `PENDING`/`PROCESSING` (reuses
+  `ReportStatusPoller`/`ReportProgressBar`) and `FAILED`. Shows a fallback notice when
+  `isFallback` or `partialData` is set rather than presenting template output as
+  analysis. `getReport`'s `select` widened to include `trendsData`, `aiInsights`,
+  scores, and `createdAt`. Verified in the browser against a real completed report and
+  a real fallback report, 2026-08-09.
 
 Next, in order:
 
-1. **`/dashboard/reports`** — a placeholder stub exists but is not wired up. It should
-   list the caller's reports via `listReports`, and is linked from both "View All" and
-   the sidebar. The dashboard's `RecentReports` is the component to reuse or extract
-   from. `/dashboard/settings` is a stub too, with no design decided.
-2. Build out `/dashboard/reports/[id]`. It must handle `PENDING`/`PROCESSING` and respect
-   `isFallback` and `partialData` rather than presenting template output as analysis.
-3. Replace the placeholder props on `/admin` with real queries.
-4. Reddit analysis, competition, and PDF export — none started.
+1. Replace the placeholder props on `/admin` with real queries.
+2. Reddit analysis, competition, and PDF export — none started.
 
 Dead links, all landing on the 404 page: `/admin/users`, `/admin/analytics`,
 `/admin/settings`, `/admin/payment-requests`.
@@ -150,3 +154,7 @@ pipeline against the real services. Prefer one real run over another mock.
   of `app/` — the first step toward a backend that can move
 - `d3a7698` route tests retargeted at `lib/data`; query and write shapes now tested where
   they live
+- `39795d8` `/dashboard/reports` list page wired to `listReports`, shared report
+  components extracted
+- `55908ad` `/dashboard/reports/[id]` built out: one component per section, real trends
+  and AI insights data, fallback/partial-data handling

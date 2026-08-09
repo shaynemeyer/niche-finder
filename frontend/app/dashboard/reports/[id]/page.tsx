@@ -1,14 +1,26 @@
+import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
+import { ArrowLeft } from 'lucide-react';
 
 import { auth } from '@/lib/auth';
 import { getReport } from '@/lib/data/reports';
+import { isRunning } from '@/components/dashboard/report-status-badge';
 import { BackLink } from '@/components/dashboard/back-link';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-} from '@/components/ui/card';
+import { ReportStatusPoller } from '@/components/dashboard/report-status-poller';
+import { ReportActions } from '@/components/dashboard/reports/report-actions';
+import { ReportProcessing } from '@/components/dashboard/reports/report-processing';
+import { ReportFallbackNotice } from '@/components/dashboard/reports/report-fallback-notice';
+import { ReportHero } from '@/components/dashboard/reports/report-hero';
+import { ReportKeyMetrics } from '@/components/dashboard/reports/report-key-metrics';
+import { ReportOpportunity } from '@/components/dashboard/reports/report-opportunity';
+import { ReportSearchTrends } from '@/components/dashboard/reports/report-search-trends';
+import { ReportAudience } from '@/components/dashboard/reports/report-audience';
+import { ReportCompetition } from '@/components/dashboard/reports/report-competition';
+import { ReportMonetization } from '@/components/dashboard/reports/report-monetization';
+import { ReportBusinessIdeas } from '@/components/dashboard/reports/report-business-ideas';
+import { ReportGtmStrategy } from '@/components/dashboard/reports/report-gtm-strategy';
+import type { TrendsAnalysisResult } from '@/lib/trends/types';
+import type { AIMarketInsights } from '@/lib/validations/insights';
 
 export default async function ReportDetailPage(
   props: PageProps<'/dashboard/reports/[id]'>,
@@ -29,27 +41,81 @@ export default async function ReportDetailPage(
     notFound();
   }
 
-  return (
-    <div className="max-w-7xl mx-auto space-y-6">
-      <BackLink />
+  if (isRunning(report.status)) {
+    return (
+      <div className="max-w-7xl mx-auto space-y-6">
+        <BackLink />
+        <ReportProcessing
+          niche={report.niche}
+          keyword={report.keyword}
+          status={report.status}
+        />
+        <ReportStatusPoller hasUnsettledReports />
+      </div>
+    );
+  }
 
-      <Card>
-        <CardHeader>
-          {/* CardTitle renders a div; the report name is this page's heading,
-              so render an h1 with the same styling. */}
-          <h1 className="font-heading text-base leading-snug font-medium">
+  if (report.status === 'FAILED' || !report.trendsData || !report.aiInsights) {
+    return (
+      <div className="max-w-7xl mx-auto space-y-6">
+        <BackLink />
+        <div className="bg-card rounded-lg border border-border shadow-sm py-12 px-6 text-center">
+          <h1 className="text-2xl font-bold text-foreground mb-2">
             {report.niche}
           </h1>
-          <CardDescription>{report.keyword}</CardDescription>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-2 text-sm text-muted-foreground">
-          <p>
-            Report ID: <span className="font-mono">{report.id}</span>
+          <p className="text-muted-foreground">
+            This report could not be completed. Try validating this niche
+            again.
           </p>
-          <p>Status: {report.status}</p>
-          <p>The full report view is not built yet.</p>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
+    );
+  }
+
+  const trends = report.trendsData as unknown as TrendsAnalysisResult;
+  const insights = report.aiInsights as unknown as AIMarketInsights;
+
+  return (
+    <div className="max-w-7xl mx-auto space-y-6">
+      <div className="flex items-center justify-between">
+        <BackLink />
+        <ReportActions />
+      </div>
+
+      <ReportFallbackNotice
+        isFallback={insights.isFallback}
+        partialData={insights.partialData}
+      />
+
+      <ReportHero
+        niche={report.niche}
+        keyword={report.keyword}
+        overallScore={report.overallScore}
+        viabilityRating={report.viabilityRating}
+        createdAt={report.createdAt}
+      />
+
+      <ReportKeyMetrics trends={trends} />
+      <ReportOpportunity insights={insights} />
+      <ReportSearchTrends trends={trends} />
+      <ReportAudience targetAudience={insights.targetAudience} />
+      <ReportCompetition competitionAnalysis={insights.competitionAnalysis} />
+      <ReportMonetization
+        monetizationStrategies={insights.monetizationStrategies}
+      />
+      <ReportBusinessIdeas businessIdeas={insights.businessIdeas} />
+      <ReportGtmStrategy gtmStrategy={insights.gtmStrategy} />
+
+      <div className="flex items-center justify-between py-6 border-t border-border">
+        <Link
+          href="/dashboard/reports"
+          className="inline-flex items-center px-4 py-2 text-sm font-medium text-foreground bg-card border border-border hover:bg-accent rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1 transition-colors"
+        >
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Back to All Reports
+        </Link>
+        <ReportActions />
+      </div>
     </div>
   );
 }

@@ -1,12 +1,19 @@
 import { after, NextResponse } from 'next/server';
 
 import { auth } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
+import {
+  claimMonthlyValidation,
+  completeReport,
+  createPendingReport,
+  isProUser,
+  markReportFailed,
+  markReportProcessing,
+} from '@/lib/data/reports';
 import { FREE_TIER_MONTHLY_LIMIT } from '@/lib/constants';
 import { GoogleTrendsService } from '@/lib/trends';
 import { OpenAIService } from '@/lib/openai';
 import { validateNicheSchema } from '@/lib/validations/report';
-import { ReportStatus, type Prisma } from '@/lib/generated/prisma/client';
+import { ReportStatus } from '@/lib/generated/prisma/client';
 
 /**
  * Trends alone takes ~6s (three sequential calls, 2s apart) and the OpenAI
@@ -38,44 +45,20 @@ export async function POST(request: Request) {
   }
   const { niche, keyword } = parsed.data;
 
-  const subscription = await prisma.subscription.findUnique({
-    where: { userId },
-    select: { planType: true, isActive: true },
-  });
-  const isPro = subscription?.planType === 'PRO' && subscription.isActive;
+  const isPro = await isProUser(userId);
 
-  const now = new Date();
-  const month = now.getMonth() + 1;
-  const year = now.getFullYear();
-
-  // The quota is claimed before the analysis runs. Incrementing afterwards
-  // lets concurrent requests both read an under-limit count and both proceed.
-  if (!isPro) {
-    const usage = await prisma.usageLog.upsert({
-      where: { userId_month_year: { userId, month, year } },
-      create: { userId, month, year, validationCount: 1 },
-      update: { validationCount: { increment: 1 } },
-      select: { validationCount: true },
-    });
-
-    if (usage.validationCount > FREE_TIER_MONTHLY_LIMIT) {
-      await prisma.usageLog.update({
-        where: { userId_month_year: { userId, month, year } },
-        data: { validationCount: { decrement: 1 } },
-      });
-      return NextResponse.json(
-        {
-          error: `Free plan allows ${FREE_TIER_MONTHLY_LIMIT} validations per month. Upgrade to Pro for unlimited reports.`,
-        },
-        { status: 403 },
-      );
-    }
+  // Claimed before the analysis runs, not after: incrementing afterwards lets
+  // concurrent requests both read an under-limit count and both proceed.
+  if (!isPro && !(await claimMonthlyValidation(userId))) {
+    return NextResponse.json(
+      {
+        error: `Free plan allows ${FREE_TIER_MONTHLY_LIMIT} validations per month. Upgrade to Pro for unlimited reports.`,
+      },
+      { status: 403 },
+    );
   }
 
-  const report = await prisma.report.create({
-    data: { userId, niche, keyword, status: ReportStatus.PENDING },
-    select: { id: true },
-  });
+  const report = await createPendingReport(userId, niche, keyword);
 
   // Scheduled with after() rather than a bare un-awaited call: the analysis
   // takes ~10s, and a floating promise can be frozen the moment the response
@@ -96,10 +79,7 @@ async function runAnalysis(
   isPro: boolean,
 ) {
   try {
-    await prisma.report.update({
-      where: { id: reportId },
-      data: { status: ReportStatus.PROCESSING },
-    });
+    await markReportProcessing(reportId);
 
     const trends = await new GoogleTrendsService().analyzeKeyword(
       keyword,
@@ -122,31 +102,20 @@ async function runAnalysis(
       ? null
       : insights.opportunityAssessment.score;
 
-    await prisma.report.update({
-      where: { id: reportId },
-      data: {
-        status: ReportStatus.COMPLETED,
-        // Prisma's JSON input type requires an index signature, which an
-        // `interface` never has. The values are plain JSON-safe objects.
-        trendsData: trends as unknown as Prisma.InputJsonValue,
-        aiInsights: insights as unknown as Prisma.InputJsonValue,
-        competitionData:
-          insights.competitionAnalysis as unknown as Prisma.InputJsonValue,
-        monetizationIdeas:
-          insights.monetizationStrategies as unknown as Prisma.InputJsonValue,
-        gtmStrategy: insights.gtmStrategy as unknown as Prisma.InputJsonValue,
-        overallScore: score,
-        viabilityRating: viabilityFromScore(score),
-        summaryText: insights.summary,
-      },
+    await completeReport(reportId, {
+      trendsData: trends,
+      aiInsights: insights,
+      competitionData: insights.competitionAnalysis,
+      monetizationIdeas: insights.monetizationStrategies,
+      gtmStrategy: insights.gtmStrategy,
+      overallScore: score,
+      viabilityRating: viabilityFromScore(score),
+      summaryText: insights.summary,
     });
   } catch (error) {
     // Nothing is listening now that the response has been sent, so a failure
     // has to be recorded on the row or the report never leaves PROCESSING.
     console.error(`Validation failed for report ${reportId}:`, error);
-    await prisma.report.update({
-      where: { id: reportId },
-      data: { status: ReportStatus.FAILED },
-    });
+    await markReportFailed(reportId);
   }
 }

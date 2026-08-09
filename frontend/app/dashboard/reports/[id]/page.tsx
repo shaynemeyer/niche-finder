@@ -3,7 +3,7 @@ import { notFound, redirect } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
 
 import { auth } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
+import { getReport } from '@/lib/data/reports';
 import {
   Card,
   CardContent,
@@ -22,12 +22,9 @@ export default async function ReportDetailPage(
 
   const { id } = await props.params;
 
-  // Scoped to the session user: a report id is guessable enough that finding
+  // getReport scopes by userId: a report id is guessable enough that finding
   // it by id alone would let anyone read another account's report.
-  const report = await prisma.report.findFirst({
-    where: { id, userId: session.user.id },
-    select: { id: true, niche: true, keyword: true, status: true },
-  });
+  const report = await getReport(id, session.user.id);
 
   if (!report) {
     notFound();

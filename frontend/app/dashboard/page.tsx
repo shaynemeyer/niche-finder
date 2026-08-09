@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation';
 
 import { auth } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
+import { getMonthlyUsage, listReports } from '@/lib/data/reports';
 import { WelcomeHeader } from '@/components/dashboard/welcome-header';
 import { PendingPaymentNotice } from '@/components/dashboard/pending-payment-notice';
 import { SubscriptionStatusCard } from '@/components/dashboard/subscription-status-card';
@@ -21,36 +21,12 @@ export default async function DashboardPage() {
   }
 
   const userId = session.user.id;
-  const now = new Date();
 
-  const [reports, usage] = await Promise.all([
-    prisma.report.findMany({
-      where: { userId },
-      orderBy: { createdAt: 'desc' },
-      take: 5,
-      select: {
-        id: true,
-        niche: true,
-        keyword: true,
-        status: true,
-        createdAt: true,
-        overallScore: true,
-        viabilityRating: true,
-      },
-    }),
-    prisma.usageLog.findUnique({
-      where: {
-        userId_month_year: {
-          userId,
-          month: now.getMonth() + 1,
-          year: now.getFullYear(),
-        },
-      },
-      select: { validationCount: true },
-    }),
+  const [reports, used] = await Promise.all([
+    listReports(userId, { limit: 5 }),
+    getMonthlyUsage(userId),
   ]);
 
-  const used = usage?.validationCount ?? 0;
   const planType = session.user.subscription?.planType ?? 'FREE';
 
   // Recomputed on every refresh, so the poller stops once the last report

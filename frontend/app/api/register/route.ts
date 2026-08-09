@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 
-import { prisma } from '@/lib/prisma';
-import { Prisma, Role } from '@/lib/generated/prisma/client';
+import { createUser } from '@/lib/data/users';
+import { Prisma } from '@/lib/generated/prisma/client';
 import { registerSchema } from '@/lib/validations/auth';
 
 export async function POST(request: Request) {
@@ -21,27 +21,7 @@ export async function POST(request: Request) {
   try {
     const hashedPassword = await bcrypt.hash(password, 12);
 
-    const user = await prisma.user.create({
-      data: {
-        name,
-        email,
-        password: hashedPassword,
-        role: Role.USER,
-        subscription: {
-          create: { planType: 'FREE', isActive: true },
-        },
-        usage: {
-          create: {
-            month: new Date().getMonth() + 1,
-            year: new Date().getFullYear(),
-            validationCount: 0,
-          },
-        },
-      },
-      // Never read the password hash back out of the database.
-      omit: { password: true },
-      include: { subscription: true },
-    });
+    const user = await createUser(name, email, hashedPassword);
 
     return NextResponse.json(
       { message: 'User created successfully', user },

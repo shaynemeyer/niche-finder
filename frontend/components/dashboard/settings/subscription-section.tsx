@@ -154,7 +154,7 @@ export function SubscriptionSection() {
                 <input
                   type="text"
                   id="transactionId"
-                  value="transactionId"
+                  defaultValue="transactionId"
                   className="w-full px-3 py-2 border border-border rounded-md shadow-sm bg-background text-foreground focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                   placeholder="Enter your transaction ID"
                   required

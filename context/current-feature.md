@@ -36,16 +36,28 @@ Done:
 - **The pipeline runs end to end.** A live validation stores `isFallback: false`,
   `model: gpt-5-nano`, a real score and a ~1,000-word generated summary. Confirmed
   2026-08-09 against Trends and OpenAI, not mocks.
+- `GET /api/reports` — the caller's reports as JSON, with `?status=` and a capped
+  `?limit=`. 8 unit tests.
+- **All database access is behind `lib/data/`.** Pages and route handlers call functions
+  there; nothing under `app/` or `components/` imports Prisma, enforced by ESLint. See
+  the architecture direction in `project-overview.md` for why.
 
 Next, in order:
 
-1. Build out `/dashboard/reports/[id]`. It must handle `PENDING`/`PROCESSING` and respect
+1. **Retarget the `validate` and `register` route tests at `lib/data`.** They still mock
+   `@/lib/prisma` and assert on Prisma call shapes, so they now reach through an extra
+   layer. They pass, but they are testing the data layer's queries rather than the
+   handler's own job — auth, input validation, response shape. `app/api/reports/route.test.ts`
+   and `lib/data/reports.test.ts` are the pattern: mock the seam, and test queries where
+   they live.
+2. Build out `/dashboard/reports/[id]`. It must handle `PENDING`/`PROCESSING` and respect
    `isFallback` and `partialData` rather than presenting template output as analysis.
-2. `/dashboard/reports` — the "View All" link in `RecentReports` still 404s.
-3. Replace the placeholder props on `/admin` with real queries.
-4. Reddit analysis, competition, and PDF export — none started.
+3. `/dashboard/reports` — the "View All" link in `RecentReports` still 404s.
+4. Replace the placeholder props on `/admin` with real queries.
+5. Reddit analysis, competition, and PDF export — none started.
 
-Housekeeping: `react-hot-toast` is now unused and can be dropped from `package.json`.
+Dead links, all landing on the 404 page: `/dashboard/reports`, `/dashboard/settings`,
+`/admin/users`, `/admin/analytics`, `/admin/settings`, `/admin/payment-requests`.
 
 ## Notes
 
@@ -126,3 +138,7 @@ pipeline against the real services. Prefer one real run over another mock.
   404 page and 4 access-control E2E specs
 - `ed52ce2` raised the token budget so gpt-5 reasoning leaves room for a response — the
   last of three silent bugs between the pipeline and real insights
+- `af55d05` submit buttons sized and stopped from stretching; contrast measured, not guessed
+- `274d070` admin and user areas linked in both directions, gated on role
+- `GET /api/reports`, `lib/data/` for every query, and an ESLint rule keeping Prisma out
+  of `app/` — the first step toward a backend that can move

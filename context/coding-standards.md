@@ -163,6 +163,14 @@ Deliberately non-defensive — errors are handled where there is a real branch t
 
 ## Database
 
+- **Queries live in `lib/data/`, not in pages.** A server component or route handler calls
+  a function there; only that layer talks to Prisma. Two reasons: moving the backend
+  elsewhere then rewrites one module rather than every call site, and the ownership scope
+  is a required argument (`listReports(userId)`) rather than a `where` clause someone can
+  forget. ESLint enforces the page half — `app/**/*.tsx` and `components/**` cannot import
+  `@/lib/prisma` at all.
+- Route handlers may still import `prisma` directly for writes `lib/data` does not cover
+  yet (`app/api/validate`, `app/api/register`). Move them as the layer grows.
 - Import the singleton `prisma` from `@/lib/prisma`. Never construct a `PrismaClient`
   elsewhere — Prisma 7 requires an explicit driver adapter and the singleton owns it.
 - `@prisma/adapter-pg` ignores `?schema=` in the connection string (node-postgres does not
@@ -189,8 +197,17 @@ No JSDoc convention is established. `lib/auth.ts` has one `/** */` on an exporte
 ## Linting
 
 ESLint flat config at `frontend/eslint.config.mjs`, composing
-`eslint-config-next/core-web-vitals` and `eslint-config-next/typescript`. No custom rules are
-added. Run `bun run lint`; don't restate or duplicate its rules here.
+`eslint-config-next/core-web-vitals` and `eslint-config-next/typescript`. Run
+`bun run lint`; don't restate or duplicate its rules here.
+
+One custom rule: `no-restricted-imports` blocks `@/lib/prisma` (and a bare `PrismaClient`)
+in `app/**/*.tsx` and `components/**`, keeping database access behind `lib/data/`. It is
+scoped to those globs deliberately — `route.ts` files are excluded, because the write path
+in `app/api/validate` and `app/api/register` still queries Prisma directly. Tighten the
+globs as those move.
+
+Add a rule here only when a convention is worth failing a build over. Anything softer
+belongs in prose above.
 
 ## Not yet established
 

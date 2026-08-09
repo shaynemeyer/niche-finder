@@ -57,6 +57,29 @@ Planned (not implemented):
 
 ---
 
+## Architecture direction
+
+Single Next.js app today, but built so the backend can move. The goal is a clean
+frontend/backend split: if this later becomes a React frontend against FastAPI (or any
+other backend), the change should be contained rather than a rewrite.
+
+What that means in practice:
+
+- **Database access lives in `lib/data/`.** Pages and route handlers call functions there;
+  only that layer talks to Prisma. A backend move rewrites those functions to `fetch` from
+  the new service, and callers stay as they are. Enforced by ESLint for pages — see
+  `coding-standards.md`.
+- **`app/api/*` route handlers are the seam.** They already speak HTTP with a JSON
+  contract, so they are the natural proxy layer if Next stays as a BFF (Backend For
+  Frontend) in front of another service.
+- **Not yet done:** the write path. `app/api/validate` and `app/api/register` still query
+  Prisma directly. They should move behind `lib/data/` as that layer grows.
+- **Undecided:** whether a future React frontend authenticates against Next (BFF, keeping
+  NextAuth) or directly against the new backend (which would also mean porting session
+  handling). This choice decides how much of `lib/auth.ts` is migration debt.
+
+---
+
 ## Data Model
 
 Defined in `frontend/prisma/schema.prisma`. PostgreSQL, Prisma 7, UUIDv7 primary keys.

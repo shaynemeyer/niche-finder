@@ -111,16 +111,21 @@ export async function isProUser(userId: string): Promise<boolean> {
 }
 
 /**
- * Claims one validation against the monthly free-tier quota.
+ * Records one validation for the month, and on the free tier enforces the
+ * quota. Returns false only when the limit was breached.
+ *
+ * The count is always incremented, including for PRO: UsageLog is the record
+ * of what a user did this month, which the dashboard reports, not only a
+ * free-tier gate. Skipping it for PRO left those accounts showing zero
+ * validations however many they ran.
  *
  * The increment happens first and is rolled back if it breaches the limit:
  * reading the count and incrementing afterwards lets two concurrent requests
- * both see an under-limit value and both proceed. Returns false when the
- * caller is over quota, having left the count as it found it.
+ * both see an under-limit value and both proceed.
  */
 export async function claimMonthlyValidation(
   userId: string,
-  now: Date = new Date(),
+  { enforceLimit = true, now = new Date() } = {},
 ): Promise<boolean> {
   const month = now.getMonth() + 1;
   const year = now.getFullYear();
@@ -133,6 +138,7 @@ export async function claimMonthlyValidation(
     select: { validationCount: true },
   });
 
+  if (!enforceLimit) return true;
   if (usage.validationCount <= FREE_TIER_MONTHLY_LIMIT) return true;
 
   await prisma.usageLog.update({

@@ -199,13 +199,27 @@ describe('claimMonthlyValidation', () => {
   });
 
   it('claims against the current calendar month', async () => {
-    await claimMonthlyValidation('user-1', new Date('2026-03-15T00:00:00Z'));
+    await claimMonthlyValidation('user-1', {
+      now: new Date('2026-03-15T00:00:00Z'),
+    });
 
     expect(usageUpsert.mock.calls[0][0].where.userId_month_year).toEqual({
       userId: 'user-1',
       month: 3,
       year: 2026,
     });
+  });
+
+  it('counts the validation even when no limit applies', async () => {
+    usageUpsert.mockResolvedValue({ validationCount: 9 });
+
+    // PRO waives the limit, not the record: UsageLog is what "This Month"
+    // reports, and skipping it left PRO accounts showing zero.
+    await expect(
+      claimMonthlyValidation('user-1', { enforceLimit: false }),
+    ).resolves.toBe(true);
+    expect(usageUpsert).toHaveBeenCalledOnce();
+    expect(usageUpdate).not.toHaveBeenCalled();
   });
 
   it('allows the last claim inside the limit', async () => {

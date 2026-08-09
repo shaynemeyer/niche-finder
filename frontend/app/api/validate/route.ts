@@ -48,8 +48,13 @@ export async function POST(request: Request) {
   const isPro = await isProUser(userId);
 
   // Claimed before the analysis runs, not after: incrementing afterwards lets
-  // concurrent requests both read an under-limit count and both proceed.
-  if (!isPro && !(await claimMonthlyValidation(userId))) {
+  // concurrent requests both read an under-limit count and both proceed. PRO
+  // is still counted — the limit is waived, not the record of the activity.
+  const claimed = await claimMonthlyValidation(userId, {
+    enforceLimit: !isPro,
+  });
+
+  if (!claimed) {
     return NextResponse.json(
       {
         error: `Free plan allows ${FREE_TIER_MONTHLY_LIMIT} validations per month. Upgrade to Pro for unlimited reports.`,

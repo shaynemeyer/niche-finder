@@ -147,7 +147,9 @@ describe('free-tier quota', () => {
 
     // Claiming after the analysis would let two concurrent requests both read
     // an under-limit count and both proceed.
-    expect(claimMonthlyValidation).toHaveBeenCalledWith('user-1');
+    expect(claimMonthlyValidation).toHaveBeenCalledWith('user-1', {
+      enforceLimit: true,
+    });
     expect(analyzeKeyword).not.toHaveBeenCalled();
   });
 
@@ -167,13 +169,17 @@ describe('free-tier quota', () => {
     expect(createPendingReport).toHaveBeenCalledOnce();
   });
 
-  it('does not claim a slot for a pro user', async () => {
+  it('counts a pro validation but waives the limit', async () => {
     isProUser.mockResolvedValue(true);
 
     const response = await POST(postRequest(validBody));
 
     expect(response.status).toBe(202);
-    expect(claimMonthlyValidation).not.toHaveBeenCalled();
+    // Not skipped: UsageLog is what "This Month" reports, so a PRO account
+    // that never claimed showed zero however many validations it ran.
+    expect(claimMonthlyValidation).toHaveBeenCalledWith('user-1', {
+      enforceLimit: false,
+    });
   });
 });
 

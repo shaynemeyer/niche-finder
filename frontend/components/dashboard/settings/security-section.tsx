@@ -36,7 +36,7 @@ export function SecuritySection() {
             <input
               type="password"
               id="currentPassword"
-              value="currentPassword"
+              defaultValue="currentPassword"
               className="mt-1 block w-full px-3 py-2 border border-border rounded-md shadow-sm bg-background text-foreground focus:outline-none focus:ring-blue-500 focus:border-blue-500"
               required
             />
@@ -51,7 +51,7 @@ export function SecuritySection() {
             <input
               type="password"
               id="newPassword"
-              value="newPassword"
+              defaultValue="newPassword"
               className="mt-1 block w-full px-3 py-2 border border-border rounded-md shadow-sm bg-background text-foreground focus:outline-none focus:ring-blue-500 focus:border-blue-500"
               required
               minLength={6}
@@ -70,7 +70,7 @@ export function SecuritySection() {
             <input
               type="password"
               id="confirmPassword"
-              value="confirmPassword"
+              defaultValue="confirmPassword"
               className="mt-1 block w-full px-3 py-2 border border-border rounded-md shadow-sm bg-background text-foreground focus:outline-none focus:ring-blue-500 focus:border-blue-500"
               required
               minLength={6}

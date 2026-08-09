@@ -1,4 +1,4 @@
-import { Lightbulb } from 'lucide-react';
+import { Lightbulb, Bookmark } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 import type { AIMarketInsights } from '@/lib/validations/insights';
@@ -40,7 +40,7 @@ export function ReportBusinessIdeas({
           can launch:
         </p>
         <div className="space-y-6">
-          {businessIdeas.map((idea) => (
+          {businessIdeas.map((idea, index) => (
             <div
               key={idea.idea}
               className="p-6 border-2 border-border rounded-lg hover:border-yellow-300 dark:hover:border-yellow-800 hover:shadow-md transition"
@@ -97,6 +97,19 @@ export function ReportBusinessIdeas({
                     {idea.targetMarket}
                   </div>
                 </div>
+              </div>
+
+              <div className="mt-4 pt-4 border-t border-border flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">
+                  Idea #{index + 1} &bull; {idea.difficulty} to implement
+                </span>
+                <button
+                  disabled
+                  className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-muted-foreground bg-card border border-border rounded-lg cursor-not-allowed"
+                >
+                  <Bookmark className="w-4 h-4 mr-2" />
+                  Save Idea
+                </button>
               </div>
             </div>
           ))}

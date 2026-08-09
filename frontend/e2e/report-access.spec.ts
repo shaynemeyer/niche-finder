@@ -136,6 +136,25 @@ test.describe('report detail access', () => {
     await expect(page.getByRole('heading', { name: niche })).toHaveCount(0);
   });
 
+  test('back returns to the page the user came from', async ({ page }) => {
+    await signIn(page, userEmail, userPassword);
+
+    // From the dashboard, back goes to the dashboard — not to the reports
+    // list the report belongs to.
+    await page.goto('/dashboard');
+    await page.getByRole('heading', { name: 'User own niche' }).click();
+    await expect(page).toHaveURL(/\/dashboard\/reports\//);
+    await page.getByRole('button', { name: 'Back' }).click();
+    await expect(page).toHaveURL(/\/dashboard$/);
+
+    // From the reports list, back goes to the reports list.
+    await page.goto('/dashboard/reports');
+    await page.getByRole('link', { name: 'View' }).first().click();
+    await expect(page).toHaveURL(/\/dashboard\/reports\//);
+    await page.getByRole('button', { name: 'Back' }).click();
+    await expect(page).toHaveURL(/\/dashboard\/reports$/);
+  });
+
   test('keeps the report when the dialog is cancelled', async ({ page }) => {
     await signIn(page, userEmail, userPassword);
     await page.goto('/dashboard/reports');

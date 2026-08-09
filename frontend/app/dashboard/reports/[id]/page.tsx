@@ -1,9 +1,8 @@
-import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
-import { ArrowLeft } from 'lucide-react';
 
 import { auth } from '@/lib/auth';
 import { getReport } from '@/lib/data/reports';
+import { BackLink } from '@/components/dashboard/back-link';
 import {
   Card,
   CardContent,
@@ -32,13 +31,7 @@ export default async function ReportDetailPage(
 
   return (
     <div className="max-w-7xl mx-auto space-y-6">
-      <Link
-        href="/dashboard/reports"
-        className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
-      >
-        <ArrowLeft className="size-4" />
-        Back to reports
-      </Link>
+      <BackLink />
 
       <Card>
         <CardHeader>

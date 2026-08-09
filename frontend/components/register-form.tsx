@@ -138,7 +138,12 @@ export function RegisterForm({
                 <FieldError errors={[errors.confirmPassword]} />
               </Field>
               <Field>
-                <Button type="submit" disabled={isSubmitting}>
+                <Button
+                  type="submit"
+                  size="lg"
+                  disabled={isSubmitting}
+                  className="h-11 text-sm"
+                >
                   {isSubmitting ? 'Creating account...' : 'Create account'}
                 </Button>
                 <FieldDescription className="text-center">

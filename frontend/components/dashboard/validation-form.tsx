@@ -120,13 +120,21 @@ export function ValidationForm() {
               </FieldDescription>
               <FieldError errors={[errors.keyword]} />
             </Field>
-            <Field>
-              <Button type="submit" disabled={isSubmitting}>
+            {/* Field's vertical orientation applies *:w-full to its children,
+                which is right for inputs and wrong for an action. Full width
+                on mobile, intrinsic width from sm up. */}
+            <Field className="sm:*:w-auto sm:items-start">
+              <Button
+                type="submit"
+                size="lg"
+                disabled={isSubmitting}
+                className="h-11 px-6 text-sm"
+              >
                 {isSubmitting ? (
                   'Starting Validation...'
                 ) : (
                   <>
-                    <Sparkles className="w-4 h-4" />
+                    <Sparkles data-icon="inline-start" />
                     Validate Niche
                   </>
                 )}

@@ -124,7 +124,12 @@ export function LoginForm({
                 <FieldError errors={[errors.password]} />
               </Field>
               <Field>
-                <Button type="submit" disabled={isSubmitting}>
+                <Button
+                  type="submit"
+                  size="lg"
+                  disabled={isSubmitting}
+                  className="h-11 text-sm"
+                >
                   {isSubmitting ? 'Signing in...' : 'Login'}
                 </Button>
                 <FieldDescription className="text-center">

@@ -1,7 +1,12 @@
 import { redirect } from 'next/navigation';
 
 import { auth } from '@/lib/auth';
-import { getMonthlyUsage, listReports } from '@/lib/data/reports';
+import {
+  countReports,
+  getMonthlyUsage,
+  listReports,
+} from '@/lib/data/reports';
+import { ReportStatus } from '@/lib/generated/prisma/client';
 import { WelcomeHeader } from '@/components/dashboard/welcome-header';
 import { PendingPaymentNotice } from '@/components/dashboard/pending-payment-notice';
 import { SubscriptionStatusCard } from '@/components/dashboard/subscription-status-card';
@@ -22,9 +27,13 @@ export default async function DashboardPage() {
 
   const userId = session.user.id;
 
-  const [reports, used] = await Promise.all([
+  // Counts come from the database, not from `reports` — that list is capped at
+  // 5, so deriving totals from it reports "5" for anyone with more.
+  const [reports, used, totalReports, completedReports] = await Promise.all([
     listReports(userId, { limit: 5 }),
     getMonthlyUsage(userId),
+    countReports(userId),
+    countReports(userId, ReportStatus.COMPLETED),
   ]);
 
   const planType = session.user.subscription?.planType ?? 'FREE';
@@ -54,9 +63,9 @@ export default async function DashboardPage() {
       <RecentReports reports={reports} />
 
       <QuickStats
-        total={reports.length}
+        total={totalReports}
         thisMonth={used}
-        completed={reports.filter((r) => r.status === 'COMPLETED').length}
+        completed={completedReports}
       />
     </div>
   );

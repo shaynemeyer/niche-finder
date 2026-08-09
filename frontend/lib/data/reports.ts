@@ -55,6 +55,21 @@ export function listReports(
 }
 
 /**
+ * Total reports for a user, optionally by status.
+ *
+ * Counted in the database rather than derived from listReports: that list is
+ * capped, so `reports.length` silently means "at most the limit".
+ */
+export function countReports(
+  userId: string,
+  status?: ReportStatus,
+): Promise<number> {
+  return prisma.report.count({
+    where: { userId, ...(status ? { status } : {}) },
+  });
+}
+
+/**
  * Scoped by userId rather than looked up on id alone: a report id is guessable
  * enough that an unscoped read would expose another account's report. Returns
  * null for both missing and foreign reports so callers cannot tell them apart.

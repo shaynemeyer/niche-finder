@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const findMany = vi.fn();
 const findFirst = vi.fn();
+const count = vi.fn();
 const findUnique = vi.fn();
 const subscriptionFindUnique = vi.fn();
 const usageUpsert = vi.fn();
@@ -12,6 +13,7 @@ vi.mock('@/lib/prisma', () => ({
     report: {
       findMany: (...args: unknown[]) => findMany(...args),
       findFirst: (...args: unknown[]) => findFirst(...args),
+      count: (...args: unknown[]) => count(...args),
     },
     subscription: {
       findUnique: (...args: unknown[]) => subscriptionFindUnique(...args),
@@ -26,6 +28,7 @@ vi.mock('@/lib/prisma', () => ({
 
 import {
   claimMonthlyValidation,
+  countReports,
   getMonthlyUsage,
   getReport,
   isProUser,
@@ -36,6 +39,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   findMany.mockResolvedValue([]);
   findFirst.mockResolvedValue(null);
+  count.mockResolvedValue(0);
   findUnique.mockResolvedValue(null);
   subscriptionFindUnique.mockResolvedValue(null);
   usageUpsert.mockResolvedValue({ validationCount: 1 });
@@ -82,6 +86,32 @@ describe('listReports', () => {
 
     await listReports('user-1');
     expect(findMany.mock.calls[1][0].take).toBe(20);
+  });
+});
+
+describe('countReports', () => {
+  it('counts in the database rather than over a capped list', async () => {
+    count.mockResolvedValue(42);
+
+    // listReports takes at most 20; deriving a total from its length would
+    // report the cap for any user above it.
+    await expect(countReports('user-1')).resolves.toBe(42);
+  });
+
+  it('scopes to the given user', async () => {
+    await countReports('user-1');
+
+    expect(count.mock.calls[0][0].where).toMatchObject({ userId: 'user-1' });
+  });
+
+  it('filters by status only when given', async () => {
+    await countReports('user-1');
+    expect(count.mock.calls[0][0].where).not.toHaveProperty('status');
+
+    await countReports('user-1', 'COMPLETED');
+    expect(count.mock.calls[1][0].where).toMatchObject({
+      status: 'COMPLETED',
+    });
   });
 });
 

@@ -10,11 +10,11 @@ Three bugs sat between `POST /api/validate` and a real report. All three were in
 instead of erroring**. The dashboard looked fine. Reports completed. Only the missing score
 hinted at anything, and that is easy to read as a genuine low-demand niche.
 
-| # | Bug | Symptom | Found by |
-|---|---|---|---|
-| 1 | Test asserted a `gpt-4-turbo` default after the models changed to `gpt-5-nano` | A failing test nobody had triaged | Reading the suite |
-| 2 | `temperature: 0.7` sent to gpt-5 | 400 on every model, chain exhausted | Running a validation |
-| 3 | `MAX_TOKENS: 800` | Reasoning ate the budget, empty content | Running a validation |
+| #   | Bug                                                                            | Symptom                                 | Found by             |
+| --- | ------------------------------------------------------------------------------ | --------------------------------------- | -------------------- |
+| 1   | Test asserted a `gpt-4-turbo` default after the models changed to `gpt-5-nano` | A failing test nobody had triaged       | Reading the suite    |
+| 2   | `temperature: 0.7` sent to gpt-5                                               | 400 on every model, chain exhausted     | Running a validation |
+| 3   | `MAX_TOKENS: 800`                                                              | Reasoning ate the budget, empty content | Running a validation |
 
 **The lesson: mocks confirm the code does what you wrote, not that what you wrote is
 right.** Both real bugs were in the boundary with a third-party API — exactly where mocks
@@ -49,10 +49,10 @@ a 400. There is no value that works, so the parameter is simply absent.
 **`max_completion_tokens` covers reasoning plus output, reasoning first.** Measured against
 `gpt-5-nano` at this project's prompt size:
 
-| Budget | `finish_reason` | Reasoning tokens | Content |
-|---|---|---|---|
-| 800 | `length` | 800 (all of it) | empty |
-| 4000 | `stop` | 2240 | 1200 chars |
+| Budget | `finish_reason` | Reasoning tokens | Content    |
+| ------ | --------------- | ---------------- | ---------- |
+| 800    | `length`        | 800 (all of it)  | empty      |
+| 4000   | `stop`          | 2240             | 1200 chars |
 
 Even `"reply with the word ok"` spends 64 reasoning tokens. Budget for reasoning first and
 the response second, and treat `finish_reason: "length"` with empty content as "the cap was

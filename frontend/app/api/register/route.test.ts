@@ -2,8 +2,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const create = vi.fn();
 
-vi.mock('@/lib/prisma', () => ({
-  prisma: { user: { create: (...args: unknown[]) => create(...args) } },
+// Mocked at the data layer: the handler owns validation, error mapping and the
+// response. The nested write shape belongs to lib/data/users.test.ts.
+vi.mock('@/lib/data/users', () => ({
+  createUser: (...args: unknown[]) => create(...args),
 }));
 
 import { Prisma } from '@/lib/generated/prisma/client';
@@ -37,32 +39,17 @@ describe('POST /api/register', () => {
     expect(create).toHaveBeenCalledOnce();
   });
 
-  it('provisions a FREE subscription and a usage row in the same write', async () => {
+  it('hashes the password before it reaches the data layer', async () => {
     create.mockResolvedValue({ id: 'user-1', email: validBody.email });
 
     await POST(postRequest(validBody));
 
-    const { data } = create.mock.calls[0][0];
-    expect(data.subscription.create).toMatchObject({ planType: 'FREE', isActive: true });
-    expect(data.usage.create.validationCount).toBe(0);
-  });
-
-  it('hashes the password and never stores it in cleartext', async () => {
-    create.mockResolvedValue({ id: 'user-1', email: validBody.email });
-
-    await POST(postRequest(validBody));
-
-    const { data } = create.mock.calls[0][0];
-    expect(data.password).not.toBe(validBody.password);
-    expect(data.password).toMatch(/^\$2[aby]\$/);
-  });
-
-  it('never selects the password hash back out', async () => {
-    create.mockResolvedValue({ id: 'user-1', email: validBody.email });
-
-    await POST(postRequest(validBody));
-
-    expect(create.mock.calls[0][0].omit).toEqual({ password: true });
+    // The handler hashes; lib/data stores whatever it is given.
+    const [name, email, password] = create.mock.calls[0];
+    expect(name).toBe(validBody.name);
+    expect(email).toBe(validBody.email);
+    expect(password).not.toBe(validBody.password);
+    expect(password).toMatch(/^\$2[aby]\$/);
   });
 
   it('returns 400 when the body fails validation', async () => {

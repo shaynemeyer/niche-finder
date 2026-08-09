@@ -3,6 +3,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const findMany = vi.fn();
 const findFirst = vi.fn();
 const findUnique = vi.fn();
+const subscriptionFindUnique = vi.fn();
+const usageUpsert = vi.fn();
+const usageUpdate = vi.fn();
 
 vi.mock('@/lib/prisma', () => ({
   prisma: {
@@ -10,17 +13,33 @@ vi.mock('@/lib/prisma', () => ({
       findMany: (...args: unknown[]) => findMany(...args),
       findFirst: (...args: unknown[]) => findFirst(...args),
     },
-    usageLog: { findUnique: (...args: unknown[]) => findUnique(...args) },
+    subscription: {
+      findUnique: (...args: unknown[]) => subscriptionFindUnique(...args),
+    },
+    usageLog: {
+      findUnique: (...args: unknown[]) => findUnique(...args),
+      upsert: (...args: unknown[]) => usageUpsert(...args),
+      update: (...args: unknown[]) => usageUpdate(...args),
+    },
   },
 }));
 
-import { getMonthlyUsage, getReport, listReports } from './reports';
+import {
+  claimMonthlyValidation,
+  getMonthlyUsage,
+  getReport,
+  isProUser,
+  listReports,
+} from './reports';
 
 beforeEach(() => {
   vi.clearAllMocks();
   findMany.mockResolvedValue([]);
   findFirst.mockResolvedValue(null);
   findUnique.mockResolvedValue(null);
+  subscriptionFindUnique.mockResolvedValue(null);
+  usageUpsert.mockResolvedValue({ validationCount: 1 });
+  usageUpdate.mockResolvedValue({});
 });
 
 describe('listReports', () => {
@@ -103,5 +122,76 @@ describe('getMonthlyUsage', () => {
     findUnique.mockResolvedValue({ validationCount: 2 });
 
     await expect(getMonthlyUsage('user-1')).resolves.toBe(2);
+  });
+});
+
+describe('isProUser', () => {
+  it('is true only for an active PRO subscription', async () => {
+    subscriptionFindUnique.mockResolvedValue({
+      planType: 'PRO',
+      isActive: true,
+    });
+
+    await expect(isProUser('user-1')).resolves.toBe(true);
+  });
+
+  it('treats an inactive PRO subscription as not pro', async () => {
+    // An expired plan must fall back to the free-tier quota, not skip it.
+    subscriptionFindUnique.mockResolvedValue({
+      planType: 'PRO',
+      isActive: false,
+    });
+
+    await expect(isProUser('user-1')).resolves.toBe(false);
+  });
+
+  it('is false for FREE and for a missing subscription', async () => {
+    subscriptionFindUnique.mockResolvedValue({
+      planType: 'FREE',
+      isActive: true,
+    });
+    await expect(isProUser('user-1')).resolves.toBe(false);
+
+    subscriptionFindUnique.mockResolvedValue(null);
+    await expect(isProUser('user-1')).resolves.toBe(false);
+  });
+});
+
+describe('claimMonthlyValidation', () => {
+  it('increments before checking the limit', async () => {
+    await claimMonthlyValidation('user-1');
+
+    // Reading the count first and incrementing after would let two concurrent
+    // requests both see an under-limit value and both proceed.
+    expect(usageUpsert.mock.calls[0][0].update).toEqual({
+      validationCount: { increment: 1 },
+    });
+  });
+
+  it('claims against the current calendar month', async () => {
+    await claimMonthlyValidation('user-1', new Date('2026-03-15T00:00:00Z'));
+
+    expect(usageUpsert.mock.calls[0][0].where.userId_month_year).toEqual({
+      userId: 'user-1',
+      month: 3,
+      year: 2026,
+    });
+  });
+
+  it('allows the last claim inside the limit', async () => {
+    usageUpsert.mockResolvedValue({ validationCount: 3 });
+
+    await expect(claimMonthlyValidation('user-1')).resolves.toBe(true);
+    expect(usageUpdate).not.toHaveBeenCalled();
+  });
+
+  it('rolls the increment back when it breaches the limit', async () => {
+    usageUpsert.mockResolvedValue({ validationCount: 4 });
+
+    await expect(claimMonthlyValidation('user-1')).resolves.toBe(false);
+    // Left as it found it, or a refused request would still burn a slot.
+    expect(usageUpdate.mock.calls[0][0].data).toEqual({
+      validationCount: { decrement: 1 },
+    });
   });
 });

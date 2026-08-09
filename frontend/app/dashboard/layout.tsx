@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useState } from 'react';
 import {
   LayoutDashboard,
+  ShieldCheck,
   FileText,
   Settings,
   LogOut,
@@ -47,6 +48,10 @@ export default function DashboardLayout({
     { name: 'Settings', href: '/dashboard/settings', icon: Settings },
   ];
 
+  // Admins have a normal account and can use this area, so they need a way
+  // back. Everyone else is redirected by proxy.ts and must not see the link.
+  const isAdmin = session?.user?.role === 'ADMIN';
+
   return (
     <div className="min-h-screen bg-background">
       {/* Sidebar for desktop */}
@@ -79,6 +84,21 @@ export default function DashboardLayout({
                 </Link>
               );
             })}
+
+            {isAdmin && (
+              <>
+                <div className="my-2 border-t border-border" />
+                <Link
+                  href="/admin"
+                  className="group flex items-center px-3 py-2 text-sm font-medium rounded-lg hover:bg-accent transition"
+                >
+                  <ShieldCheck className="mr-3 h-5 w-5 text-muted-foreground group-hover:text-red-600 dark:group-hover:text-red-500" />
+                  <span className="text-foreground/80 group-hover:text-foreground">
+                    Admin area
+                  </span>
+                </Link>
+              </>
+            )}
           </nav>
 
           {/* User section */}
@@ -154,6 +174,21 @@ export default function DashboardLayout({
                   </Link>
                 );
               })}
+
+              {isAdmin && (
+                <>
+                  <div className="my-2 border-t border-border" />
+                  <Link
+                    href="/admin"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="group flex items-center px-3 py-2 text-base font-medium rounded-lg text-foreground hover:bg-accent"
+                  >
+                    <ShieldCheck className="mr-3 h-5 w-5 text-muted-foreground" />
+                    Admin area
+                  </Link>
+                </>
+              )}
+
               <button
                 onClick={() => {
                   setMobileMenuOpen(false);

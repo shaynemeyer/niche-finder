@@ -3,6 +3,7 @@
 import {
   BarChart3,
   LayoutDashboard,
+  LayoutGrid,
   LogOut,
   Menu,
   Receipt,
@@ -57,6 +58,15 @@ export default function AdminLayout({
     { name: 'Settings', href: '/admin/settings', icon: Settings },
   ];
 
+  // Admins hold a normal account too, and /dashboard only requires a session —
+  // so this is reachable, just not linked. Kept out of `navigation` because it
+  // leaves the admin area rather than moving within it.
+  const userAreaLink = {
+    name: 'User dashboard',
+    href: '/dashboard',
+    icon: LayoutGrid,
+  };
+
   return (
     <div className="min-h-screen bg-background">
       {/* Sidebar for desktop */}
@@ -92,6 +102,17 @@ export default function AdminLayout({
                 </Link>
               );
             })}
+
+            <div className="my-2 border-t border-border" />
+            <Link
+              href={userAreaLink.href}
+              className="group flex items-center px-3 py-2 text-sm font-medium rounded-lg hover:bg-accent transition"
+            >
+              <userAreaLink.icon className="mr-3 h-5 w-5 text-muted-foreground group-hover:text-blue-600 dark:group-hover:text-blue-400" />
+              <span className="text-foreground/80 group-hover:text-foreground">
+                {userAreaLink.name}
+              </span>
+            </Link>
           </nav>
 
           {/* User section */}
@@ -166,6 +187,16 @@ export default function AdminLayout({
                   </Link>
                 );
               })}
+
+              <div className="my-2 border-t border-border" />
+              <Link
+                href={userAreaLink.href}
+                onClick={() => setMobileMenuOpen(false)}
+                className="group flex items-center px-3 py-2 text-base font-medium rounded-lg text-foreground hover:bg-accent"
+              >
+                <userAreaLink.icon className="mr-4 h-6 w-6 text-muted-foreground" />
+                {userAreaLink.name}
+              </Link>
 
               <button
                 onClick={() => {

@@ -91,6 +91,28 @@ test.describe('route protection', () => {
     // page itself is still a placeholder.
     await expect(page.getByRole('link', { name: 'Payment Requests' })).toBeVisible();
   });
+
+  test('lets an admin cross between the admin and user areas', async ({
+    page,
+  }) => {
+    await signIn(page, adminEmail, adminPassword);
+
+    // /dashboard only requires a session, so an admin can use it — but without
+    // these links the only route between the two areas is typing the URL.
+    await page.getByRole('link', { name: 'User dashboard' }).click();
+    await expect(page).toHaveURL(/\/dashboard$/);
+
+    await page.getByRole('link', { name: 'Admin area' }).click();
+    await expect(page).toHaveURL(/\/admin$/);
+  });
+
+  test('hides the admin link from a non-admin', async ({ page }) => {
+    await signIn(page, userEmail, userPassword);
+
+    await expect(page).toHaveURL(/\/dashboard/);
+    // proxy.ts would redirect them anyway; the link must not suggest otherwise.
+    await expect(page.getByRole('link', { name: 'Admin area' })).toHaveCount(0);
+  });
 });
 
 test.describe('registration', () => {

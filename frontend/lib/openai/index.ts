@@ -145,7 +145,10 @@ export class OpenAIService {
       ],
       // max_tokens is deprecated in the SDK and rejected by reasoning models.
       max_completion_tokens: maxTokens,
-      temperature: 0.7,
+      // temperature is omitted deliberately: gpt-5 models accept only the
+      // default of 1 and reject any explicit value with a 400, which failed
+      // every model in the chain and silently dropped reports to the fallback
+      // template. Steer output through the prompt instead.
       response_format: zodResponseFormat(
         modelInsightsSchema,
         'market_insights',

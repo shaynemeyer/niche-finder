@@ -335,6 +335,17 @@ describe('OpenAIService', () => {
       expect(model).toBe('gpt-5-nano');
     });
 
+    it('sends no temperature, which gpt-5 models reject outright', async () => {
+      create.mockResolvedValueOnce(ok);
+      const service = new OpenAIService();
+
+      await service.generateMarketInsights('n', 'k', trends());
+
+      // A 400 here fails every model in the chain, so every report silently
+      // degrades to the boilerplate template.
+      expect(create.mock.calls[0][0]).not.toHaveProperty('temperature');
+    });
+
     it('honours OPENAI_MODEL', async () => {
       process.env.OPENAI_MODEL = 'gpt-4o';
       create.mockResolvedValueOnce(ok);

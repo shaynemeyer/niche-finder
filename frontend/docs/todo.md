@@ -3,6 +3,9 @@
 Known gaps found while working on something else. Each entry states what is wrong, how it
 was verified, and why it was not fixed at the time.
 
+Delete an entry when it is fixed. An entry that has been here a long time is either not
+actually a problem — delete it — or is being avoided, which is worth naming.
+
 ## No rate limiting on authentication
 
 Nothing limits repeated sign-in attempts, so passwords can be guessed as fast as the
@@ -46,18 +49,39 @@ either page and lands on a 404 instead of a handled error.
 to its built-in defaults. Dropping them is the smaller change and matches the project's
 non-defensive style — build them when a flow actually needs them.
 
-## Free-tier limit is not enforced
+## Nothing meaningful to show a PRO user's plan
 
-The landing page advertises 3 validations per month, and
-`lib/constants.ts` exports `FREE_TIER_MONTHLY_LIMIT = 3`, but nothing reads it
-server-side. `UsageLog` rows are created with `validationCount: 0` at registration and
-never incremented.
+`PlanBadge` shows `Free · 1/3` with a progress bar, which is useful — the number has a
+reference point and the bar implies scarcity. PRO shows only `Pro`, because a bare count
+("3 this month") means nothing without something to compare it against, and inventing a
+figure to fill the space is what got the old full-width card removed.
 
-`SubscriptionStatusCard` renders the limit and the progress bar from props, so the UI is
-ready; the enforcement is not. This lands with the report pipeline, since there is nothing
-to count yet.
+The candidate worth building is **the renewal date** — "Renews Sep 9", or "Expires in 12
+days" as it approaches. It is the question a paying user actually has, and
+`subscription.endDate` is already on the session, so it needs no query.
 
-## `context/current-feature.md` is stale
+Blocked on there being a value: `endDate` is null on every account, because nothing sets
+it. It should start being written when the `PaymentRequest` approval flow lands. Until
+then a renewal line would render empty for everyone.
 
-Still reads "Not Started" while several features have shipped. The workflow in
-`context/ai-interaction.md` expects it to be updated at steps 1 and 10 of each change.
+Rejected while deciding: a feature list, an "unlimited ✓" marker, or usage framed as
+activity. The first two are the filler the old card was removed for; the third only becomes
+interesting at volumes a solo user will not reach soon.
+
+## Historical validations are uncounted
+
+`claimMonthlyValidation` originally ran for free-tier users only, so PRO accounts never
+incremented `UsageLog`. Fixed in `3fc4ed4`, but only for validations run after it — reports
+created before that still are not reflected in the count.
+
+Verified: `admin@gmail.com` has 3 reports against a `validationCount` of 0.
+
+A backfill would set each user's count for the current month to their actual report count
+for that month. Small and safe, but it rewrites usage data, so it wants a deliberate
+decision rather than being folded into another change.
+
+## `docs/lessons-learned.md` overlaps this file
+
+Both record things worth remembering. The split intended: this file is open work someone
+should pick up; `lessons-learned.md` is closed work worth not repeating. Entries that get
+fixed should move there or be deleted, not left here.

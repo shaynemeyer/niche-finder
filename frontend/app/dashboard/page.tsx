@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation';
 
 import { auth } from '@/lib/auth';
 import { countReports, listReports, startOfMonth } from '@/lib/data/reports';
+import { hasPendingPayment } from '@/lib/data/payments';
 import { ReportStatus } from '@/lib/generated/prisma/client';
 import { WelcomeHeader } from '@/components/dashboard/welcome-header';
 import { PendingPaymentNotice } from '@/components/dashboard/pending-payment-notice';
@@ -10,7 +11,6 @@ import { RecentReports } from '@/components/dashboard/recent-reports';
 import { ReportStatusPoller } from '@/components/dashboard/report-status-poller';
 import { QuickStats } from '@/components/dashboard/quick-stats';
 
-const hasPendingPayment = false;
 
 export default async function DashboardPage() {
   const session = await auth();
@@ -27,13 +27,19 @@ export default async function DashboardPage() {
   // "This month" counts reports rather than reading UsageLog: the label says
   // reports, UsageLog is the quota ledger, and the two legitimately differ —
   // a failed validation spends a slot but still leaves a FAILED report.
-  const [reports, totalReports, completedReports, thisMonthReports] =
-    await Promise.all([
-      listReports(userId, { limit: 5 }),
-      countReports(userId),
-      countReports(userId, { status: ReportStatus.COMPLETED }),
-      countReports(userId, { since: startOfMonth() }),
-    ]);
+  const [
+    reports,
+    totalReports,
+    completedReports,
+    thisMonthReports,
+    pendingPayment,
+  ] = await Promise.all([
+    listReports(userId, { limit: 5 }),
+    countReports(userId),
+    countReports(userId, { status: ReportStatus.COMPLETED }),
+    countReports(userId, { since: startOfMonth() }),
+    hasPendingPayment(userId),
+  ]);
 
 
   // Recomputed on every refresh, so the poller stops once the last report
@@ -46,7 +52,7 @@ export default async function DashboardPage() {
     <div className="max-w-7xl mx-auto space-y-6">
       <WelcomeHeader firstName={session.user.name?.split(' ')[0] || 'there'} />
 
-      {hasPendingPayment && <PendingPaymentNotice />}
+      {pendingPayment && <PendingPaymentNotice />}
 
       {/* Plan and usage live in the sidebar (PlanBadge) — a full-width card
           above the fold spent that space on something the user already knows. */}

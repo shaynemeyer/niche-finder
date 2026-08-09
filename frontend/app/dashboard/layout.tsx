@@ -1,8 +1,8 @@
 'use client';
 import { signOut, useSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   LayoutDashboard,
   ShieldCheck,
@@ -14,6 +14,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { ThemeToggle } from '@/components/theme-toggle';
+import { PlanBadge } from '@/components/dashboard/plan-badge';
 
 export default function DashboardLayout({
   children,
@@ -22,7 +23,37 @@ export default function DashboardLayout({
 }) {
   const { data: session, status } = useSession();
   const router = useRouter();
+  // Refetches usage on navigation, so the count reflects a validation that
+  // was just run.
+  const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // The layout is a client component and the session carries no usage figure —
+  // per-month data does not belong in a JWT. /api/usage exists for exactly
+  // this caller. Null until it resolves, so the badge renders without a count
+  // rather than blocking the sidebar.
+  const [usage, setUsage] = useState<{
+    used: number;
+    limit: number | null;
+  } | null>(null);
+
+  useEffect(() => {
+    if (status !== 'authenticated') return;
+
+    let cancelled = false;
+    fetch('/api/usage')
+      .then((response) => (response.ok ? response.json() : null))
+      .then((data) => {
+        if (!cancelled && data) setUsage(data);
+      })
+      .catch(() => {
+        // A missing count is not worth surfacing — the badge just omits it.
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [status, pathname]);
 
   async function handleSignOut() {
     await signOut({ redirect: false });
@@ -51,6 +82,11 @@ export default function DashboardLayout({
   // Admins have a normal account and can use this area, so they need a way
   // back. Everyone else is redirected by proxy.ts and must not see the link.
   const isAdmin = session?.user?.role === 'ADMIN';
+
+  // Absent while the session loads; treated as free so the CTA appears rather
+  // than flashing in after hydration.
+  const isPro = session?.user?.subscription?.planType === 'PRO';
+
 
   return (
     <div className="min-h-screen bg-background">
@@ -100,6 +136,12 @@ export default function DashboardLayout({
               </>
             )}
           </nav>
+
+          <PlanBadge
+            isPro={isPro}
+            used={usage?.used ?? 0}
+            limit={usage?.limit ?? null}
+          />
 
           {/* User section */}
           <div className="shrink-0 border-t border-border p-4">
@@ -188,6 +230,13 @@ export default function DashboardLayout({
                   </Link>
                 </>
               )}
+
+              <PlanBadge
+                isPro={isPro}
+                used={usage?.used ?? 0}
+                limit={usage?.limit ?? null}
+                onNavigate={() => setMobileMenuOpen(false)}
+              />
 
               <button
                 onClick={() => {

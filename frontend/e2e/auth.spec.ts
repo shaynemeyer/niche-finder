@@ -106,6 +106,22 @@ test.describe('route protection', () => {
     await expect(page).toHaveURL(/\/admin$/);
   });
 
+  test('shows the upgrade CTA to a free user and hides it from pro', async ({
+    page,
+  }) => {
+    await signIn(page, userEmail, userPassword);
+    await expect(
+      page.getByRole('link', { name: 'Upgrade to Pro' }).first(),
+    ).toBeVisible();
+
+    // The admin is seeded PRO — prompting them to upgrade would be wrong.
+    await signIn(page, adminEmail, adminPassword);
+    await page.goto('/dashboard');
+    await expect(
+      page.getByRole('link', { name: 'Upgrade to Pro' }),
+    ).toHaveCount(0);
+  });
+
   test('hides the admin link from a non-admin', async ({ page }) => {
     await signIn(page, userEmail, userPassword);
 

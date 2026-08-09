@@ -11,13 +11,13 @@ vi.mock('google-trends-api', () => ({
 }));
 
 // The service sleeps 2s after every call; without this the suite takes 18s.
-vi.mock('./utils', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('./utils')>()),
+vi.mock('@/lib/utils', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/lib/utils')>()),
   sleep: vi.fn(() => Promise.resolve()),
 }));
 
 import googleTrends from 'google-trends-api';
-import { GoogleTrendsService } from './googleTrends';
+import { GoogleTrendsService } from './index';
 
 const mocked = vi.mocked(googleTrends);
 

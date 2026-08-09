@@ -3,42 +3,15 @@ import googleTrends, {
   type InterestOverTimeResponse,
   type RelatedQueriesResponse,
 } from 'google-trends-api';
-import { sleep } from './utils';
+import { sleep } from '@/lib/utils';
+import type { TrendsDataPoint, RelatedQuery, RegionalInterest, TrendsAnalysisResult } from './types';
 
-export interface TrendsDataPoint {
-  time: string;
-  value: number;
-}
-
-export interface RelatedQuery {
-  query: string;
-  value: number;
-}
-
-export interface RegionalInterest {
-  geo: string;
-  value: number;
-}
-
-export interface TrendsAnalysisResult {
-  keyword: string;
-  timelineData: TrendsDataPoint[];
-  averageInterest: number;
-  growthRate: number;
-  trend: 'rising' | 'declining' | 'stable';
-  relatedQueries: {
-    top: RelatedQuery[];
-    rising: RelatedQuery[];
-  };
-  regionalInterest: RegionalInterest[];
-  insights: string[];
-  /**
-   * True when at least one upstream call failed. Without it an outage is
-   * indistinguishable from a keyword nobody searches for, and the report
-   * would state "very low search volume" with confidence.
-   */
-  partial: boolean;
-}
+export type {
+  TrendsDataPoint,
+  RelatedQuery,
+  RegionalInterest,
+  TrendsAnalysisResult,
+} from './types';
 
 /** Pause after each upstream call; Google Trends throttles aggressively. */
 const RATE_LIMIT_MS = 2000;

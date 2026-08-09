@@ -34,6 +34,23 @@ export function updateUserName(userId: string, name: string) {
   });
 }
 
+/** The caller's password hash, for verifying the current password before a change. Null for OAuth-only accounts. */
+export function getUserPasswordHash(userId: string) {
+  return prisma.user.findUnique({
+    where: { id: userId },
+    select: { password: true },
+  });
+}
+
+/** Overwrites the caller's password hash. */
+export function updateUserPassword(userId: string, hashedPassword: string) {
+  return prisma.user.update({
+    where: { id: userId },
+    data: { password: hashedPassword },
+    select: { id: true },
+  });
+}
+
 /**
  * Creates a user with the FREE subscription and usage row that every account
  * needs, in one nested write rather than three sequential calls — a failure

@@ -28,16 +28,24 @@ Done:
   while any report is unsettled. 7 E2E specs.
 - `FREE_TIER_MONTHLY_LIMIT` enforced server-side, claimed before the analysis runs.
 - `/dashboard` queries real reports and usage instead of placeholder zeros.
+- Running reports show a spinner badge and an indeterminate progress bar; submitting
+  raises a sonner toast. `Toaster` is mounted in `app/providers.tsx`.
+- `/dashboard/reports/[id]` — placeholder showing niche, keyword, id and status. The
+  query is scoped to the session user; 4 E2E specs cover the ownership boundary.
+- `app/not-found.tsx` — 404 page for unmatched URLs and `notFound()` calls.
 
 Next, in order:
 
-1. `/dashboard/reports` and `/dashboard/reports/[id]` — both are linked from
-   `RecentReports` and currently 404. The detail page must handle `PENDING`/`PROCESSING`
-   and respect `isFallback` and `partialData`.
-2. Run the pipeline for real once. Every test mocks or intercepts the services, so no
-   validation has yet called Trends and OpenAI end to end.
-3. Replace the placeholder props on `/admin` with real queries.
-4. Reddit analysis, competition, and PDF export — none started.
+1. Run the pipeline for real once. Every test mocks or intercepts the services, so no
+   validation has yet called Trends and OpenAI end to end. Two bugs have already been
+   caught only by running it (see History), so this is the highest-value step.
+2. Build out `/dashboard/reports/[id]`. It must handle `PENDING`/`PROCESSING` and respect
+   `isFallback` and `partialData` rather than presenting template output as analysis.
+3. `/dashboard/reports` — the "View All" link in `RecentReports` still 404s.
+4. Replace the placeholder props on `/admin` with real queries.
+5. Reddit analysis, competition, and PDF export — none started.
+
+Housekeeping: `react-hot-toast` is now unused and can be dropped from `package.json`.
 
 ## Notes
 
@@ -68,6 +76,22 @@ consumes one; whether that should be refunded is undecided.
 `docs/report-queue-design.md` records the queue this becomes when upstream rate limits or
 invocation cost start to bind, and why neither is the constraint yet.
 
+**Never send `temperature` to the OpenAI service.** gpt-5 models accept only the default of
+1 and reject any explicit value with a 400 — which failed every model in the fallback chain
+and silently dropped every report to the boilerplate template. Steer output through the
+prompt. `lib/openai/index.test.ts` asserts the parameter is absent.
+
+The Prisma client is generated as CommonJS (`moduleFormat = "cjs"`), because `package.json`
+declares no `"type": "module"`. ESM output could not be imported from Playwright specs at
+all. `lib/generated/prisma` is gitignored, so pulling a schema change needs
+`bunx prisma generate` — the schema alone does not update a local client.
+
+`notFound()` in a streamed dynamic route responds **200** and renders the not-found body, so
+an E2E spec must assert on content rather than a 404 status.
+
+Two bugs so far have been invisible to the test suite and caught only by running the
+pipeline against the real services. Prefer one real run over another mock.
+
 ## History
 
 <!-- Keep this updated. Earliest to latest -->
@@ -89,3 +113,9 @@ invocation cost start to bind, and why neither is the constraint yet.
 - `f14eeb4` validation pipeline wired to the dashboard: `POST /api/validate`, quota
   enforcement, real dashboard queries, status polling
 - `bdb4e7f` E2E coverage for the validation form
+- `c948db9` dropped the hardcoded `temperature` that gpt-5 models reject — every report
+  had been silently falling through to the fallback template
+- `a178650` Prisma client emitted as CommonJS to match the project's module system
+- `dff33d0` spinner badge, indeterminate progress bar and submit toast for running reports
+- `74a5839` placeholder `/dashboard/reports/[id]` with an ownership-scoped query, plus a
+  404 page and 4 access-control E2E specs

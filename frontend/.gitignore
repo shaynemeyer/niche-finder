@@ -43,6 +43,9 @@ next-env.d.ts
 
 /lib/generated/prisma
 
+# uploaded payment invoices — local filesystem storage, not committed
+/uploads
+
 # playwright
 /test-results/
 /playwright-report/

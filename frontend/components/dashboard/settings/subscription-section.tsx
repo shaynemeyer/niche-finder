@@ -2,7 +2,9 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 import { CheckCircle, Clock, CreditCard, XCircle } from 'lucide-react';
+import { toast } from 'sonner';
 
 import { BankTransferForm } from '@/components/dashboard/settings/bank-transfer-form';
 import { FREE_TIER_MONTHLY_LIMIT } from '@/lib/constants';
@@ -47,12 +49,35 @@ export function SubscriptionSection({
   paymentRequests,
 }: SubscriptionSectionProps) {
   const router = useRouter();
+  const { update: updateSession } = useSession();
   const [showBankTransferForm, setShowBankTransferForm] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const planType = subscription?.planType ?? 'FREE';
   const isPro = planType === 'PRO' && (subscription?.isActive ?? false);
   const hasPending = paymentRequests.some((r) => r.status === 'PENDING');
   const hasApproved = paymentRequests.some((r) => r.status === 'APPROVED');
+
+  // Subscription plan is baked into the JWT and only re-read from the
+  // database on a session update trigger, so a plain router.refresh() alone
+  // would keep showing the stale plan after an admin approves payment.
+  async function handleRefreshStatus() {
+    setIsRefreshing(true);
+    try {
+      const updated = await updateSession();
+      const nowPro =
+        updated?.user?.subscription?.planType === 'PRO' &&
+        updated.user.subscription.isActive &&
+        !isPro;
+
+      toast.success(nowPro ? "You're now on Pro!" : 'Status refreshed');
+      router.refresh();
+    } catch {
+      toast.error('Could not refresh status. Please try again.');
+    } finally {
+      setIsRefreshing(false);
+    }
+  }
 
   return (
     <div className="bg-card rounded-lg border border-border shadow-sm">
@@ -99,8 +124,13 @@ export function SubscriptionSection({
                   </p>
                 </div>
               </div>
-              <button className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-foreground bg-card border border-border hover:bg-accent rounded-lg whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
-                Refresh Status
+              <button
+                type="button"
+                onClick={handleRefreshStatus}
+                disabled={isRefreshing}
+                className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-foreground bg-card border border-border hover:bg-accent rounded-lg whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                {isRefreshing ? 'Refreshing...' : 'Refresh Status'}
               </button>
             </div>
           </div>
@@ -121,8 +151,13 @@ export function SubscriptionSection({
                   </p>
                 </div>
               </div>
-              <button className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-lg whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-1 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
-                Refresh Status
+              <button
+                type="button"
+                onClick={handleRefreshStatus}
+                disabled={isRefreshing}
+                className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-lg whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-1 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                {isRefreshing ? 'Refreshing...' : 'Refresh Status'}
               </button>
             </div>
           </div>

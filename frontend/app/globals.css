@@ -152,3 +152,9 @@
 [data-sonner-toast][data-styled="true"].cn-toast[data-type="success"] {
   @apply bg-green-50 dark:bg-green-950/60 text-green-800 dark:text-green-200 border-green-200 dark:border-green-900;
 }
+
+/* Error toasts, same reasoning as success above. Red matches the Rejected
+   badge pairing in SubscriptionSection. */
+[data-sonner-toast][data-styled="true"].cn-toast[data-type="error"] {
+  @apply bg-red-50 dark:bg-red-950/60 text-red-800 dark:text-red-200 border-red-200 dark:border-red-900;
+}

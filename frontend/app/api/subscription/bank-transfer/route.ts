@@ -21,6 +21,8 @@ function extensionFor(mimeType: string) {
       return '.jpg';
     case 'image/png':
       return '.png';
+    case 'image/webp':
+      return '.webp';
     default:
       return '.pdf';
   }
@@ -44,7 +46,7 @@ export async function POST(request: Request) {
 
   if (!ALLOWED_INVOICE_TYPES.includes(invoice.type)) {
     return NextResponse.json(
-      { error: 'Only JPG, PNG, or PDF files are allowed' },
+      { error: 'Only JPG, PNG, WEBP, or PDF files are allowed' },
       { status: 400 },
     );
   }

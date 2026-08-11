@@ -4,6 +4,7 @@ export const ALLOWED_INVOICE_TYPES = [
   'image/jpeg',
   'image/jpg',
   'image/png',
+  'image/webp',
   'application/pdf',
 ];
 export const MAX_INVOICE_SIZE = 5 * 1024 * 1024;

@@ -2,22 +2,33 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const findFirst = vi.fn();
 const findMany = vi.fn();
+const create = vi.fn();
 
 vi.mock('@/lib/prisma', () => ({
   prisma: {
     paymentRequest: {
       findFirst: (...args: unknown[]) => findFirst(...args),
       findMany: (...args: unknown[]) => findMany(...args),
+      create: (...args: unknown[]) => create(...args),
     },
   },
 }));
 
-import { hasPendingPayment, listPaymentRequests } from './payments';
+import {
+  createPaymentRequest,
+  hasPendingPayment,
+  listPaymentRequests,
+} from './payments';
 
 beforeEach(() => {
   vi.clearAllMocks();
   findFirst.mockResolvedValue(null);
   findMany.mockResolvedValue([]);
+  create.mockResolvedValue({
+    id: 'payment-1',
+    status: 'PENDING',
+    createdAt: new Date('2026-01-01'),
+  });
 });
 
 describe('hasPendingPayment', () => {
@@ -64,5 +75,34 @@ describe('listPaymentRequests', () => {
     findMany.mockResolvedValue(requests);
 
     await expect(listPaymentRequests('user-1')).resolves.toBe(requests);
+  });
+});
+
+describe('createPaymentRequest', () => {
+  it('creates a PENDING request scoped to the user', async () => {
+    await createPaymentRequest('user-1', 'tx-123', 'invoices/file.pdf');
+
+    expect(create.mock.calls[0][0]).toMatchObject({
+      data: {
+        userId: 'user-1',
+        transactionId: 'tx-123',
+        invoicePath: 'invoices/file.pdf',
+      },
+    });
+  });
+
+  it('does not select invoicePath back out', async () => {
+    await createPaymentRequest('user-1', 'tx-123', 'invoices/file.pdf');
+
+    expect(create.mock.calls[0][0].select).not.toHaveProperty('invoicePath');
+  });
+
+  it('returns the created request', async () => {
+    const created = { id: 'payment-1', status: 'PENDING', createdAt: new Date() };
+    create.mockResolvedValue(created);
+
+    await expect(
+      createPaymentRequest('user-1', 'tx-123', 'invoices/file.pdf'),
+    ).resolves.toBe(created);
   });
 });

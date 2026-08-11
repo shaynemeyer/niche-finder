@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { CheckCircle, Clock, CreditCard, XCircle } from 'lucide-react';
 
 import { BankTransferForm } from '@/components/dashboard/settings/bank-transfer-form';
@@ -45,6 +46,7 @@ export function SubscriptionSection({
   subscription,
   paymentRequests,
 }: SubscriptionSectionProps) {
+  const router = useRouter();
   const [showBankTransferForm, setShowBankTransferForm] = useState(false);
 
   const planType = subscription?.planType ?? 'FREE';
@@ -182,7 +184,13 @@ export function SubscriptionSection({
                 Upgrade via Bank Transfer
               </button>
             ) : (
-              <BankTransferForm onCancel={() => setShowBankTransferForm(false)} />
+              <BankTransferForm
+                onCancel={() => setShowBankTransferForm(false)}
+                onSubmitted={() => {
+                  setShowBankTransferForm(false);
+                  router.refresh();
+                }}
+              />
             )}
           </>
         )}

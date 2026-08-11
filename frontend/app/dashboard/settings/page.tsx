@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 
 import { auth } from '@/lib/auth';
+import { listPaymentRequests } from '@/lib/data/payments';
 import { getUserProfile } from '@/lib/data/users';
 import { DangerZoneSection } from '@/components/dashboard/settings/danger-zone-section';
 import { NotificationsSection } from '@/components/dashboard/settings/notifications-section';
@@ -21,6 +22,8 @@ async function SettingsPage() {
     redirect('/signin');
   }
 
+  const paymentRequests = await listPaymentRequests(session.user.id);
+
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       <div>
@@ -31,7 +34,10 @@ async function SettingsPage() {
       </div>
 
       <ProfileSection user={user} />
-      <SubscriptionSection />
+      <SubscriptionSection
+        subscription={session.user.subscription ?? null}
+        paymentRequests={paymentRequests}
+      />
       <SecuritySection />
       <NotificationsSection />
       <DangerZoneSection />

@@ -3,7 +3,7 @@
  * live in this layer rather than in pages and route handlers.
  */
 import { prisma } from '@/lib/prisma';
-import { PaymentStatus } from '@/lib/generated/prisma/client';
+import { PaymentStatus, type PaymentRequest } from '@/lib/generated/prisma/client';
 
 /**
  * True while the user has a bank transfer awaiting admin approval.
@@ -18,4 +18,26 @@ export async function hasPendingPayment(userId: string): Promise<boolean> {
   });
 
   return pending !== null;
+}
+
+export type PaymentRequestListItem = Pick<
+  PaymentRequest,
+  'id' | 'transactionId' | 'status' | 'rejectedReason' | 'createdAt'
+>;
+
+/** A user's payment requests, most recent first. invoicePath is excluded — never rendered in a list. */
+export function listPaymentRequests(
+  userId: string,
+): Promise<PaymentRequestListItem[]> {
+  return prisma.paymentRequest.findMany({
+    where: { userId },
+    orderBy: { createdAt: 'desc' },
+    select: {
+      id: true,
+      transactionId: true,
+      status: true,
+      rejectedReason: true,
+      createdAt: true,
+    },
+  });
 }

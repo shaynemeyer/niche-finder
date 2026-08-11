@@ -97,6 +97,22 @@ describe('POST /api/subscription/bank-transfer', () => {
     expect(writeFile).not.toHaveBeenCalled();
   });
 
+  it('accepts a webp invoice', async () => {
+    const response = await POST(
+      postRequest({
+        transactionId: 'transaction-12345',
+        invoice: makeInvoice({ type: 'image/webp' }),
+      }),
+    );
+
+    expect(response.status).toBe(201);
+    expect(createPaymentRequest).toHaveBeenCalledWith(
+      'user-1',
+      'transaction-12345',
+      expect.stringContaining('.webp'),
+    );
+  });
+
   it('returns 400 for a disallowed file type', async () => {
     const response = await POST(
       postRequest({

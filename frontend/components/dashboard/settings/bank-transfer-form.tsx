@@ -44,7 +44,7 @@ export function BankTransferForm({
     }
 
     if (!ALLOWED_INVOICE_TYPES.includes(file.type)) {
-      toast.error('Only JPG, PNG, or PDF files are allowed');
+      toast.error('Only JPG, PNG, WEBP, or PDF files are allowed');
       e.target.value = '';
       return;
     }
@@ -136,7 +136,7 @@ export function BankTransferForm({
               htmlFor="invoice"
               className="block text-sm font-medium text-foreground mb-1"
             >
-              Upload Payment Proof (JPG, PNG, or PDF)
+              Upload Payment Proof (JPG, PNG, WEBP, or PDF)
             </label>
             <div className="flex items-center gap-2">
               <label className="flex-1 flex items-center justify-center px-4 py-2 border border-border rounded-md shadow-sm text-sm font-medium text-foreground bg-card hover:bg-accent cursor-pointer">
@@ -145,7 +145,7 @@ export function BankTransferForm({
                 <input
                   type="file"
                   id="invoice"
-                  accept="image/jpeg,image/jpg,image/png,application/pdf"
+                  accept="image/jpeg,image/jpg,image/png,image/webp,application/pdf"
                   className="hidden"
                   onChange={handleFileChange}
                 />

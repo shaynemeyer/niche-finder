@@ -1,7 +1,19 @@
 import Link from 'next/link';
 import { Clock } from 'lucide-react';
 
-export function PendingPaymentNotice() {
+import type { PendingPaymentRequest } from '@/lib/data/payments';
+
+export function PendingPaymentNotice({
+  paymentRequest,
+}: {
+  paymentRequest: PendingPaymentRequest;
+}) {
+  const submittedOn = paymentRequest.createdAt.toLocaleDateString('en-US', {
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
+  });
+
   return (
     <div className="bg-yellow-50 dark:bg-yellow-950/40 border border-yellow-200 dark:border-yellow-900 rounded-lg">
       <div className="px-6 py-4">
@@ -12,8 +24,9 @@ export function PendingPaymentNotice() {
               Payment Request Pending
             </h3>
             <p className="text-sm text-yellow-800 dark:text-yellow-200 mt-1">
-              Your payment request is awaiting admin approval. You&apos;ll be
-              automatically upgraded to Pro once your payment is approved.
+              Submitted on {submittedOn}. Your payment request is awaiting
+              admin approval. You&apos;ll be automatically upgraded to Pro
+              once your payment is approved.
             </p>
             <Link
               href="/dashboard/settings"

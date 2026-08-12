@@ -20,6 +20,22 @@ export async function hasPendingPayment(userId: string): Promise<boolean> {
   return pending !== null;
 }
 
+export type PendingPaymentRequest = Pick<PaymentRequest, 'id' | 'createdAt'>;
+
+/**
+ * The user's pending bank transfer, if any. A user has at most one at a
+ * time — submitting while a request is pending is blocked elsewhere — so
+ * this returns a single row rather than a list.
+ */
+export function getPendingPaymentRequest(
+  userId: string,
+): Promise<PendingPaymentRequest | null> {
+  return prisma.paymentRequest.findFirst({
+    where: { userId, status: PaymentStatus.PENDING },
+    select: { id: true, createdAt: true },
+  });
+}
+
 export type PaymentRequestListItem = Pick<
   PaymentRequest,
   'id' | 'transactionId' | 'status' | 'rejectedReason' | 'createdAt'

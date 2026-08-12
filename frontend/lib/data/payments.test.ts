@@ -16,6 +16,7 @@ vi.mock('@/lib/prisma', () => ({
 
 import {
   createPaymentRequest,
+  getPendingPaymentRequest,
   hasPendingPayment,
   listPaymentRequests,
 } from './payments';
@@ -51,6 +52,36 @@ describe('hasPendingPayment', () => {
 
   it('is false when none exists', async () => {
     await expect(hasPendingPayment('user-1')).resolves.toBe(false);
+  });
+});
+
+describe('getPendingPaymentRequest', () => {
+  it('scopes to the user and to PENDING only', async () => {
+    await getPendingPaymentRequest('user-1');
+
+    expect(findFirst.mock.calls[0][0].where).toEqual({
+      userId: 'user-1',
+      status: 'PENDING',
+    });
+  });
+
+  it('does not select invoicePath', async () => {
+    await getPendingPaymentRequest('user-1');
+
+    expect(findFirst.mock.calls[0][0].select).not.toHaveProperty(
+      'invoicePath',
+    );
+  });
+
+  it('returns null when none exists', async () => {
+    await expect(getPendingPaymentRequest('user-1')).resolves.toBeNull();
+  });
+
+  it('returns the pending request when one exists', async () => {
+    const pending = { id: 'payment-1', createdAt: new Date('2026-01-01') };
+    findFirst.mockResolvedValue(pending);
+
+    await expect(getPendingPaymentRequest('user-1')).resolves.toBe(pending);
   });
 });
 

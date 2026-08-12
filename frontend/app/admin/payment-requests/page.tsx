@@ -1,19 +1,32 @@
+import { redirect } from 'next/navigation';
+
+import { auth } from '@/lib/auth';
+import { listAllPaymentRequests } from '@/lib/data/payments';
 import { Toaster } from '@/components/ui/sonner';
 import { EmptyPaymentRequests } from '@/components/admin/payment-requests/empty-payment-requests';
 import { PaymentRequestCard } from '@/components/admin/payment-requests/payment-request-card';
 
-// No admin-scoped payment request query exists yet; this stands in until
-// one does.
-const SAMPLE_REQUEST = {
-  name: 'name',
-  email: 'email',
-  status: 'PENDING' as const,
-  transactionId: 'transactionId',
-  createdAt: 'createdAt',
-  invoiceUrl: '',
-};
+function formatDate(date: Date) {
+  return date.toLocaleDateString('en-US', {
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
+  });
+}
 
-function PaymentRequestsPage() {
+async function PaymentRequestsPage() {
+  const session = await auth();
+
+  if (!session?.user) {
+    redirect('/signin');
+  }
+
+  if (session.user.role !== 'ADMIN') {
+    redirect('/dashboard');
+  }
+
+  const paymentRequests = await listAllPaymentRequests();
+
   return (
     <>
       <Toaster position="top-right" />
@@ -30,9 +43,21 @@ function PaymentRequestsPage() {
 
         {/* Payment Requests List */}
         <div className="grid gap-4">
-          <EmptyPaymentRequests />
+          {paymentRequests.length === 0 && <EmptyPaymentRequests />}
 
-          <PaymentRequestCard {...SAMPLE_REQUEST} />
+          {paymentRequests.map((request) => (
+            <PaymentRequestCard
+              key={request.id}
+              name={request.user.name ?? 'Unknown'}
+              email={request.user.email}
+              status={request.status}
+              transactionId={request.transactionId}
+              createdAt={formatDate(request.createdAt)}
+              invoiceUrl={`/api/admin/payment-requests/${request.id}/invoice`}
+              rejectedReason={request.rejectedReason}
+              approvedOn={request.approvedAt ? formatDate(request.approvedAt) : null}
+            />
+          ))}
         </div>
 
         {/* Reject Modal */}

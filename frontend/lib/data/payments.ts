@@ -58,6 +58,57 @@ export function listPaymentRequests(
   });
 }
 
+export type AdminPaymentRequestListItem = Pick<
+  PaymentRequest,
+  | 'id'
+  | 'transactionId'
+  | 'invoicePath'
+  | 'payment'
+  | 'status'
+  | 'rejectedReason'
+  | 'approvedAt'
+  | 'createdAt'
+> & {
+  user: { id: string; name: string | null; email: string };
+};
+
+/**
+ * Every payment request across all users, most recent first, with the
+ * submitter's name and email. Unlike listPaymentRequests this includes
+ * invoicePath — admins need it to link to the uploaded invoice.
+ */
+export function listAllPaymentRequests(): Promise<
+  AdminPaymentRequestListItem[]
+> {
+  return prisma.paymentRequest.findMany({
+    orderBy: { createdAt: 'desc' },
+    select: {
+      id: true,
+      transactionId: true,
+      invoicePath: true,
+      payment: true,
+      status: true,
+      rejectedReason: true,
+      approvedAt: true,
+      createdAt: true,
+      user: { select: { id: true, name: true, email: true } },
+    },
+  });
+}
+
+/**
+ * A payment request's stored invoice path, by id. Used only to resolve the
+ * file to stream back — never render invoicePath itself to a client.
+ */
+export function getPaymentRequestInvoicePath(
+  id: string,
+): Promise<Pick<PaymentRequest, 'invoicePath'> | null> {
+  return prisma.paymentRequest.findUnique({
+    where: { id },
+    select: { invoicePath: true },
+  });
+}
+
 /** Records a bank-transfer request awaiting admin approval. */
 export function createPaymentRequest(options: {
   userId: string;

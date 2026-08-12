@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const findFirst = vi.fn();
 const findMany = vi.fn();
+const findUnique = vi.fn();
 const create = vi.fn();
 
 vi.mock('@/lib/prisma', () => ({
@@ -9,6 +10,7 @@ vi.mock('@/lib/prisma', () => ({
     paymentRequest: {
       findFirst: (...args: unknown[]) => findFirst(...args),
       findMany: (...args: unknown[]) => findMany(...args),
+      findUnique: (...args: unknown[]) => findUnique(...args),
       create: (...args: unknown[]) => create(...args),
     },
   },
@@ -16,8 +18,10 @@ vi.mock('@/lib/prisma', () => ({
 
 import {
   createPaymentRequest,
+  getPaymentRequestInvoicePath,
   getPendingPaymentRequest,
   hasPendingPayment,
+  listAllPaymentRequests,
   listPaymentRequests,
 } from './payments';
 
@@ -25,6 +29,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   findFirst.mockResolvedValue(null);
   findMany.mockResolvedValue([]);
+  findUnique.mockResolvedValue(null);
   create.mockResolvedValue({
     id: 'payment-1',
     status: 'PENDING',
@@ -106,6 +111,60 @@ describe('listPaymentRequests', () => {
     findMany.mockResolvedValue(requests);
 
     await expect(listPaymentRequests('user-1')).resolves.toBe(requests);
+  });
+});
+
+describe('listAllPaymentRequests', () => {
+  it('orders most recent first with no user scoping', async () => {
+    await listAllPaymentRequests();
+
+    expect(findMany.mock.calls[0][0]).toMatchObject({
+      orderBy: { createdAt: 'desc' },
+    });
+    expect(findMany.mock.calls[0][0].where).toBeUndefined();
+  });
+
+  it('selects invoicePath and the submitter name and email', async () => {
+    await listAllPaymentRequests();
+
+    const { select } = findMany.mock.calls[0][0];
+    expect(select).toHaveProperty('invoicePath', true);
+    expect(select.user).toEqual({
+      select: { id: true, name: true, email: true },
+    });
+  });
+
+  it('returns the requests as given', async () => {
+    const requests = [{ id: 'payment-1', transactionId: 'tx-1' }];
+    findMany.mockResolvedValue(requests);
+
+    await expect(listAllPaymentRequests()).resolves.toBe(requests);
+  });
+});
+
+describe('getPaymentRequestInvoicePath', () => {
+  it('looks up by id and selects only invoicePath', async () => {
+    await getPaymentRequestInvoicePath('payment-1');
+
+    expect(findUnique.mock.calls[0][0]).toEqual({
+      where: { id: 'payment-1' },
+      select: { invoicePath: true },
+    });
+  });
+
+  it('returns null when no request has that id', async () => {
+    await expect(
+      getPaymentRequestInvoicePath('missing'),
+    ).resolves.toBeNull();
+  });
+
+  it('returns the invoice path when found', async () => {
+    const found = { invoicePath: 'invoices/file.pdf' };
+    findUnique.mockResolvedValue(found);
+
+    await expect(getPaymentRequestInvoicePath('payment-1')).resolves.toBe(
+      found,
+    );
   });
 });
 

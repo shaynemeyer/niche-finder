@@ -20,6 +20,43 @@ with its own rules.
   `@auth/core/types` and `@auth/core/jwt` (not `next-auth` — v5 moved these).
 - `any` does not appear in hand-written code. Keep it that way.
 
+## Function parameters
+
+**No positional parameters in hand-written functions — use a single options object.**
+Positional args are easy to transpose silently when two or more share a type
+(`createPaymentRequest('user-1', 'tx-123', ...)` — TypeScript won't catch swapped strings), and
+the call site reads without needing the signature open. Prefer:
+
+```ts
+function createPaymentRequest(options: {
+  userId: string;
+  transactionId: string;
+  invoicePath: string;
+  payment: number;
+}) { ... }
+```
+
+over:
+
+```ts
+function createPaymentRequest(userId: string, transactionId: string, invoicePath: string, payment: number) { ... }
+```
+
+This is a **forward-looking rule**: it applies to new functions and functions you're already
+changing for another reason. It does not mandate a sweep of existing code — `lib/data/`
+currently has positional functions (`getReport(id, userId)`, `listReports(userId, options)`)
+predating this rule; leave them as-is until they're touched for another reason, then convert
+them while you're in there.
+
+Applies project-wide to hand-written functions — `lib/data/`, `lib/validations/`, route
+handlers, utilities. Does not apply to:
+
+- React component props — already objects via destructured props (`{ userId, transactionId }`
+  in the function signature *is* this rule, not an exception to it).
+- Third-party/library call signatures you don't control (`prisma.paymentRequest.create({...})`
+  is the library's own object-arg API, unrelated to this rule).
+- shadcn/ui primitives in `components/ui/` — CLI output, not hand-written.
+
 ## Formatting
 
 No Prettier config exists, and there is no format script — formatting is maintained by hand.

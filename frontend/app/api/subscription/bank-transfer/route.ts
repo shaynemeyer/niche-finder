@@ -83,11 +83,12 @@ export async function POST(request: Request) {
     const bytes = Buffer.from(await invoice.arrayBuffer());
     await writeFile(path.join(UPLOAD_DIR, filename), bytes);
 
-    const paymentRequest = await createPaymentRequest(
-      session.user.id,
-      parsed.data.transactionId,
-      path.join('invoices', filename),
-    );
+    const paymentRequest = await createPaymentRequest({
+      userId: session.user.id,
+      transactionId: parsed.data.transactionId,
+      invoicePath: path.join('invoices', filename),
+      payment: 29,
+    });
 
     return NextResponse.json(
       { message: 'Payment request submitted', paymentRequest },

@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation';
 
 import { auth } from '@/lib/auth';
 import { countReports, listReports, startOfMonth } from '@/lib/data/reports';
-import { hasPendingPayment } from '@/lib/data/payments';
+import { getPendingPaymentRequest } from '@/lib/data/payments';
 import { ReportStatus } from '@/lib/generated/prisma/client';
 import { WelcomeHeader } from '@/components/dashboard/welcome-header';
 import { PendingPaymentNotice } from '@/components/dashboard/pending-payment-notice';
@@ -32,13 +32,13 @@ export default async function DashboardPage() {
     totalReports,
     completedReports,
     thisMonthReports,
-    pendingPayment,
+    pendingPaymentRequest,
   ] = await Promise.all([
     listReports(userId, { limit: 5 }),
     countReports(userId),
     countReports(userId, { status: ReportStatus.COMPLETED }),
     countReports(userId, { since: startOfMonth() }),
-    hasPendingPayment(userId),
+    getPendingPaymentRequest(userId),
   ]);
 
 
@@ -52,7 +52,9 @@ export default async function DashboardPage() {
     <div className="max-w-7xl mx-auto space-y-6">
       <WelcomeHeader firstName={session.user.name?.split(' ')[0] || 'there'} />
 
-      {pendingPayment && <PendingPaymentNotice />}
+      {pendingPaymentRequest && (
+        <PendingPaymentNotice paymentRequest={pendingPaymentRequest} />
+      )}
 
       {/* Plan and usage live in the sidebar (PlanBadge) — a full-width card
           above the fold spent that space on something the user already knows. */}

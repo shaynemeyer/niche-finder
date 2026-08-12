@@ -177,6 +177,7 @@ model PaymentRequest {
   userId         String        @db.Uuid
   transactionId  String        @db.VarChar(255)
   invoicePath    String        @db.VarChar(500)
+  payment        Decimal?      @db.Decimal(10, 2)
   status         PaymentStatus @default(PENDING)
   rejectedReason String?       @db.Text
   approvedAt     DateTime?

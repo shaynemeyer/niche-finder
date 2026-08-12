@@ -69,11 +69,12 @@ describe('POST /api/subscription/bank-transfer', () => {
 
     expect(response.status).toBe(201);
     expect(writeFile).toHaveBeenCalledTimes(1);
-    expect(createPaymentRequest).toHaveBeenCalledWith(
-      'user-1',
-      'transaction-12345',
-      expect.stringContaining('invoices'),
-    );
+    expect(createPaymentRequest).toHaveBeenCalledWith({
+      userId: 'user-1',
+      transactionId: 'transaction-12345',
+      invoicePath: expect.stringContaining('invoices'),
+      payment: 29,
+    });
     expect(body.paymentRequest.id).toBe('payment-1');
   });
 
@@ -106,11 +107,12 @@ describe('POST /api/subscription/bank-transfer', () => {
     );
 
     expect(response.status).toBe(201);
-    expect(createPaymentRequest).toHaveBeenCalledWith(
-      'user-1',
-      'transaction-12345',
-      expect.stringContaining('.webp'),
-    );
+    expect(createPaymentRequest).toHaveBeenCalledWith({
+      userId: 'user-1',
+      transactionId: 'transaction-12345',
+      invoicePath: expect.stringContaining('.webp'),
+      payment: 29,
+    });
   });
 
   it('returns 400 for a disallowed file type', async () => {

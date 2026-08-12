@@ -111,19 +111,30 @@ describe('listPaymentRequests', () => {
 
 describe('createPaymentRequest', () => {
   it('creates a PENDING request scoped to the user', async () => {
-    await createPaymentRequest('user-1', 'tx-123', 'invoices/file.pdf');
+    await createPaymentRequest({
+      userId: 'user-1',
+      transactionId: 'tx-123',
+      invoicePath: 'invoices/file.pdf',
+      payment: 29,
+    });
 
     expect(create.mock.calls[0][0]).toMatchObject({
       data: {
         userId: 'user-1',
         transactionId: 'tx-123',
         invoicePath: 'invoices/file.pdf',
+        payment: 29,
       },
     });
   });
 
   it('does not select invoicePath back out', async () => {
-    await createPaymentRequest('user-1', 'tx-123', 'invoices/file.pdf');
+    await createPaymentRequest({
+      userId: 'user-1',
+      transactionId: 'tx-123',
+      invoicePath: 'invoices/file.pdf',
+      payment: 29,
+    });
 
     expect(create.mock.calls[0][0].select).not.toHaveProperty('invoicePath');
   });
@@ -133,7 +144,12 @@ describe('createPaymentRequest', () => {
     create.mockResolvedValue(created);
 
     await expect(
-      createPaymentRequest('user-1', 'tx-123', 'invoices/file.pdf'),
+      createPaymentRequest({
+        userId: 'user-1',
+        transactionId: 'tx-123',
+        invoicePath: 'invoices/file.pdf',
+        payment: 29,
+      }),
     ).resolves.toBe(created);
   });
 });

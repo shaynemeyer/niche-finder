@@ -59,13 +59,15 @@ export function listPaymentRequests(
 }
 
 /** Records a bank-transfer request awaiting admin approval. */
-export function createPaymentRequest(
-  userId: string,
-  transactionId: string,
-  invoicePath: string,
-): Promise<Pick<PaymentRequest, 'id' | 'status' | 'createdAt'>> {
+export function createPaymentRequest(options: {
+  userId: string;
+  transactionId: string;
+  invoicePath: string;
+  payment: number;
+}): Promise<Pick<PaymentRequest, 'id' | 'status' | 'createdAt'>> {
+  const { userId, transactionId, invoicePath, payment } = options;
   return prisma.paymentRequest.create({
-    data: { userId, transactionId, invoicePath },
+    data: { userId, transactionId, invoicePath, payment },
     select: { id: true, status: true, createdAt: true },
   });
 }

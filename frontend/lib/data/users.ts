@@ -3,7 +3,53 @@
  * in this layer rather than in route handlers.
  */
 import { prisma } from '@/lib/prisma';
-import { Role } from '@/lib/generated/prisma/client';
+import { PlanType, Role } from '@/lib/generated/prisma/client';
+
+/** Every user with their subscription and report count, for the admin user list. */
+export function listAdminUsers() {
+  return prisma.user.findMany({
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      role: true,
+      createdAt: true,
+      subscription: { select: { planType: true, isActive: true } },
+      _count: { select: { reports: true } },
+    },
+    orderBy: { createdAt: 'desc' },
+  });
+}
+
+/**
+ * Deletes a user. Child records (subscription, usage, reports, payment
+ * requests) cascade per the schema. Throws P2025 if the id does not exist;
+ * the caller maps that to a 404.
+ */
+export function deleteUser(userId: string) {
+  return prisma.user.delete({ where: { id: userId } });
+}
+
+/** Changes a user's role from the admin panel. Throws P2025 if the id does not exist. */
+export function updateUserRole(userId: string, role: Role) {
+  return prisma.user.update({
+    where: { id: userId },
+    data: { role },
+    select: { id: true, role: true },
+  });
+}
+
+/**
+ * Changes a user's plan from the admin panel. Throws P2025 if the user has
+ * no subscription row — the caller only offers this when one exists.
+ */
+export function updateUserPlan(userId: string, planType: PlanType) {
+  return prisma.subscription.update({
+    where: { userId },
+    data: { planType },
+    select: { userId: true, planType: true },
+  });
+}
 
 /** Profile fields for the account settings page. Never selects the password hash. */
 export function getUserProfile(userId: string) {

@@ -20,3 +20,19 @@ export const createPaymentRequestSchema = z.object({
 export type CreatePaymentRequestValues = z.infer<
   typeof createPaymentRequestSchema
 >;
+
+export const reviewPaymentRequestSchema = z.discriminatedUnion('action', [
+  z.object({ action: z.literal('approve') }),
+  z.object({
+    action: z.literal('reject'),
+    reason: z
+      .string()
+      .trim()
+      .min(1, 'A rejection reason is required')
+      .max(1000, 'Rejection reason must be at most 1000 characters'),
+  }),
+]);
+
+export type ReviewPaymentRequestValues = z.infer<
+  typeof reviewPaymentRequestSchema
+>;

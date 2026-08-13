@@ -1,4 +1,4 @@
-import { CheckCircle, Clock, Eye, XCircle } from 'lucide-react';
+import { CheckCircle, Clock, Eye, Loader2, XCircle } from 'lucide-react';
 
 import type { PaymentStatus } from '@/lib/generated/prisma/client';
 
@@ -11,6 +11,10 @@ type PaymentRequestCardProps = {
   invoiceUrl: string;
   rejectedReason?: string | null;
   approvedOn?: string | null;
+  onApprove?: () => void;
+  isApproving?: boolean;
+  onReject?: () => void;
+  isRejecting?: boolean;
 };
 
 // Status colours are semantic rather than theme tokens, so each needs its own
@@ -47,6 +51,10 @@ export function PaymentRequestCard({
   invoiceUrl,
   rejectedReason,
   approvedOn,
+  onApprove,
+  isApproving = false,
+  onReject,
+  isRejecting = false,
 }: PaymentRequestCardProps) {
   const badge = STATUS_BADGE[status];
   const BadgeIcon = badge.icon;
@@ -124,13 +132,31 @@ export function PaymentRequestCard({
 
         {status === 'PENDING' && (
           <div className="flex gap-2 pt-2">
-            <button className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-green-600 hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-1 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
-              <CheckCircle className="w-4 h-4 mr-2" />
-              Approve & Upgrade to Pro
+            <button
+              type="button"
+              onClick={onApprove}
+              disabled={isApproving}
+              className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-green-600 hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-1 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              {isApproving ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <CheckCircle className="w-4 h-4 mr-2" />
+              )}
+              {isApproving ? 'Processing...' : 'Approve & Upgrade to Pro'}
             </button>
-            <button className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-1 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
-              <XCircle className="w-4 h-4 mr-2" />
-              Reject
+            <button
+              type="button"
+              onClick={onReject}
+              disabled={isRejecting}
+              className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-1 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              {isRejecting ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <XCircle className="w-4 h-4 mr-2" />
+              )}
+              {isRejecting ? 'Processing...' : 'Reject'}
             </button>
           </div>
         )}

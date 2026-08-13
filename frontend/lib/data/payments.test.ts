@@ -4,6 +4,8 @@ const findFirst = vi.fn();
 const findMany = vi.fn();
 const findUnique = vi.fn();
 const create = vi.fn();
+const update = vi.fn();
+const subscriptionUpdate = vi.fn();
 
 vi.mock('@/lib/prisma', () => ({
   prisma: {
@@ -12,17 +14,30 @@ vi.mock('@/lib/prisma', () => ({
       findMany: (...args: unknown[]) => findMany(...args),
       findUnique: (...args: unknown[]) => findUnique(...args),
       create: (...args: unknown[]) => create(...args),
+      update: (...args: unknown[]) => update(...args),
     },
+    subscription: {
+      update: (...args: unknown[]) => subscriptionUpdate(...args),
+    },
+    $transaction: (fn: (tx: unknown) => unknown) =>
+      fn({
+        paymentRequest: { update: (...args: unknown[]) => update(...args) },
+        subscription: {
+          update: (...args: unknown[]) => subscriptionUpdate(...args),
+        },
+      }),
   },
 }));
 
 import {
+  approvePaymentRequest,
   createPaymentRequest,
   getPaymentRequestInvoicePath,
   getPendingPaymentRequest,
   hasPendingPayment,
   listAllPaymentRequests,
   listPaymentRequests,
+  rejectPaymentRequest,
 } from './payments';
 
 beforeEach(() => {
@@ -35,6 +50,13 @@ beforeEach(() => {
     status: 'PENDING',
     createdAt: new Date('2026-01-01'),
   });
+  update.mockResolvedValue({
+    id: 'payment-1',
+    status: 'APPROVED',
+    approvedAt: new Date('2026-01-02'),
+    userId: 'user-1',
+  });
+  subscriptionUpdate.mockResolvedValue({});
 });
 
 describe('hasPendingPayment', () => {
@@ -210,5 +232,82 @@ describe('createPaymentRequest', () => {
         payment: 29,
       }),
     ).resolves.toBe(created);
+  });
+});
+
+describe('approvePaymentRequest', () => {
+  it('updates only a PENDING request to APPROVED', async () => {
+    await approvePaymentRequest('payment-1');
+
+    expect(update.mock.calls[0][0]).toMatchObject({
+      where: { id: 'payment-1', status: 'PENDING' },
+      data: { status: 'APPROVED' },
+    });
+  });
+
+  it('upgrades the submitter subscription to PRO for one year', async () => {
+    await approvePaymentRequest('payment-1');
+
+    const { where, data } = subscriptionUpdate.mock.calls[0][0];
+    expect(where).toEqual({ userId: 'user-1' });
+    expect(data.planType).toBe('PRO');
+    expect(data.isActive).toBe(true);
+    expect(data.endDate.getTime() - data.startDate.getTime()).toBeCloseTo(
+      365 * 24 * 60 * 60 * 1000,
+      -5,
+    );
+  });
+
+  it('returns the approved request', async () => {
+    const approved = {
+      id: 'payment-1',
+      status: 'APPROVED',
+      approvedAt: new Date('2026-01-02'),
+      userId: 'user-1',
+    };
+    update.mockResolvedValue(approved);
+
+    await expect(approvePaymentRequest('payment-1')).resolves.toBe(approved);
+  });
+
+  it('propagates a P2025 when the request is not PENDING', async () => {
+    const notFound = new Error('No record found');
+    update.mockRejectedValue(notFound);
+
+    await expect(approvePaymentRequest('payment-1')).rejects.toBe(notFound);
+    expect(subscriptionUpdate).not.toHaveBeenCalled();
+  });
+});
+
+describe('rejectPaymentRequest', () => {
+  it('updates only a PENDING request to REJECTED with the reason', async () => {
+    await rejectPaymentRequest({ id: 'payment-1', reason: 'Invalid transaction ID' });
+
+    expect(update.mock.calls[0][0]).toMatchObject({
+      where: { id: 'payment-1', status: 'PENDING' },
+      data: { status: 'REJECTED', rejectedReason: 'Invalid transaction ID' },
+    });
+  });
+
+  it('returns the rejected request', async () => {
+    const rejected = {
+      id: 'payment-1',
+      status: 'REJECTED',
+      rejectedReason: 'Invalid transaction ID',
+    };
+    update.mockResolvedValue(rejected);
+
+    await expect(
+      rejectPaymentRequest({ id: 'payment-1', reason: 'Invalid transaction ID' }),
+    ).resolves.toBe(rejected);
+  });
+
+  it('propagates a P2025 when the request is not PENDING', async () => {
+    const notFound = new Error('No record found');
+    update.mockRejectedValue(notFound);
+
+    await expect(
+      rejectPaymentRequest({ id: 'payment-1', reason: 'Invalid transaction ID' }),
+    ).rejects.toBe(notFound);
   });
 });

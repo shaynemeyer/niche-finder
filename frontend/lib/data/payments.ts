@@ -109,6 +109,68 @@ export function getPaymentRequestInvoicePath(
   });
 }
 
+export type ApprovedPaymentRequest = Pick<
+  PaymentRequest,
+  'id' | 'status' | 'approvedAt'
+>;
+
+/**
+ * Approves a pending payment request and upgrades the submitter's
+ * subscription to PRO. Both writes happen in one transaction so a request
+ * can never end up APPROVED without the upgrade actually applying.
+ *
+ * Scoped to PENDING via the update's where clause: an already-approved or
+ * rejected request matches zero rows, so a stale click can't double-upgrade
+ * or overwrite a rejection. Prisma throws P2025 in that case.
+ */
+export async function approvePaymentRequest(
+  id: string,
+): Promise<ApprovedPaymentRequest> {
+  return prisma.$transaction(async (tx) => {
+    const paymentRequest = await tx.paymentRequest.update({
+      where: { id, status: PaymentStatus.PENDING },
+      data: { status: PaymentStatus.APPROVED, approvedAt: new Date() },
+      select: { id: true, status: true, approvedAt: true, userId: true },
+    });
+
+    const startDate = new Date();
+    const endDate = new Date(startDate);
+    endDate.setFullYear(endDate.getFullYear() + 1);
+
+    await tx.subscription.update({
+      where: { userId: paymentRequest.userId },
+      data: { planType: 'PRO', isActive: true, startDate, endDate },
+    });
+
+    return paymentRequest;
+  });
+}
+
+export type RejectedPaymentRequest = Pick<
+  PaymentRequest,
+  'id' | 'status' | 'rejectedReason'
+>;
+
+/**
+ * Rejects a pending payment request with a reason.
+ *
+ * Scoped to PENDING via the update's where clause, same as
+ * approvePaymentRequest: an already-reviewed request matches zero rows, so a
+ * stale click can't overwrite an existing decision. Prisma throws P2025 in
+ * that case.
+ */
+export function rejectPaymentRequest(options: {
+  id: string;
+  reason: string;
+}): Promise<RejectedPaymentRequest> {
+  const { id, reason } = options;
+  return prisma.paymentRequest.update({
+    where: { id, status: PaymentStatus.PENDING },
+    data: { status: PaymentStatus.REJECTED, rejectedReason: reason },
+    select: { id: true, status: true, rejectedReason: true },
+  });
+}
+
 /** Records a bank-transfer request awaiting admin approval. */
 export function createPaymentRequest(options: {
   userId: string;

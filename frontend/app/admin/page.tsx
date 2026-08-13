@@ -2,13 +2,12 @@ import { redirect } from 'next/navigation';
 
 import { auth } from '@/lib/auth';
 import { getAdminAnalytics } from '@/lib/data/admin';
+import { PRO_MONTHLY_PRICE } from '@/lib/constants';
 import { KeyMetrics } from '@/components/admin/key-metrics';
 import { ReportsByStatus } from '@/components/admin/reports-by-status';
 import { PlatformStatistics } from '@/components/admin/platform-statistics';
 import { QuickActions } from '@/components/admin/quick-actions';
 
-// No billing model exists yet, so MRR has no data source to read from.
-const MRR_PLACEHOLDER = 0;
 // No usage target is modeled yet; 100 keeps the progress bar meaningful.
 const MONTHLY_VALIDATIONS_TARGET = 100;
 
@@ -29,6 +28,9 @@ export default async function AdminPage() {
   const proConversionRate = analytics.totalUsers
     ? Math.round((proUsers / analytics.totalUsers) * 100)
     : 0;
+  // No billing model exists yet, so MRR is derived from the pro user count
+  // and the landing page's list price rather than a real subscription charge.
+  const mrr = proUsers * PRO_MONTHLY_PRICE;
 
   return (
     <div className="max-w-7xl mx-auto space-y-6">
@@ -46,7 +48,7 @@ export default async function AdminPage() {
         recentReports={analytics.recentReports}
         proUsers={proUsers}
         freeUsers={freeUsers}
-        mrr={MRR_PLACEHOLDER}
+        mrr={mrr}
       />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

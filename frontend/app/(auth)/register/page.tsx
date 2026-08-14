@@ -1,7 +1,7 @@
 import Link from 'next/link';
 
-import { RegisterForm } from '@/components/register-form';
-import { ThemeToggle } from '@/components/theme-toggle';
+import { RegisterForm } from '@/components/auth/register-form';
+import { ThemeToggle } from '@/components/theme/theme-toggle';
 
 export default function RegisterPage() {
   return (

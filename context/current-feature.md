@@ -81,6 +81,15 @@ Done:
   (already typed via `types/next-auth.d.ts`), and fixed a catch block that
   swallowed errors without returning a response. 5 route unit tests, 2 data-layer
   unit tests.
+- **`components/` reorganized — no more loose files at either root.**
+  `key-metrics`, `metric-card`, `platform-statistics`, `progress-bar`,
+  `quick-actions`, and `reports-by-status` moved from `components/admin/` into
+  `components/admin/shared/` — they're reused across `app/admin/page.tsx`,
+  `app/admin/analytics/page.tsx`, and the `users/`/`analytics/` subfolders,
+  not scoped to one route. `login-form`/`register-form` moved into a new
+  `components/auth/`; `theme-provider`/`theme-toggle` moved into a new
+  `components/theme/`. All import paths updated; build, lint, typecheck, and
+  the full unit suite verified after each move.
 
 Next, in order:
 
@@ -199,3 +208,9 @@ pipeline against the real services. Prefer one real run over another mock.
 - `6de3ed0` `POST /api/subscription/cancel` moved behind
   `lib/data/users.getSubscription`/`cancelSubscription`, dropped an `any` cast on
   `session.user.id`, fixed a catch block that swallowed errors without responding
+- `63647f2` shared admin widgets (`key-metrics`, `metric-card`,
+  `platform-statistics`, `progress-bar`, `quick-actions`, `reports-by-status`)
+  moved from `components/admin/` into `components/admin/shared/`
+- `430c2ce` `login-form`/`register-form` grouped into `components/auth/`,
+  `theme-provider`/`theme-toggle` into `components/theme/` — no more loose
+  files at the `components/` root

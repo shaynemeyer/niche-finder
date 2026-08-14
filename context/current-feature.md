@@ -260,3 +260,9 @@ pipeline against the real services. Prefer one real run over another mock.
   `lib/data/users.ts`, dead `user-row.tsx` deleted
 - `aefe794` `dark:` variants added to `summary-cards.tsx`'s four stat
   cards, caught by a second `/react-ts` pass
+- `a6f2afb` `react-ts` skill generalized to stack-agnostic React/TypeScript
+  quality checks (types, hooks, component structure, error handling,
+  dead code); stack-specific checks (forms/Zod, TanStack Table, Zustand,
+  sonner, Tailwind v4/theme tokens, `lib/data/` layering, file
+  organization) deferred to `coding-standards.md`, which already
+  documented them

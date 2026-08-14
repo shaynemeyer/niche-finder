@@ -117,6 +117,12 @@ Done:
   the browser against an admin session: all six columns render, sort toggles
   both directions and reorders rows, search filter and role/plan dropdowns
   still work, zero console or `/_next/mcp` errors.
+- **Re-ran `/react-ts` after the fixes above — one new finding, fixed.**
+  `components/admin/analytics/summary-cards.tsx`'s four solid-fill stat
+  cards (`bg-blue-600`, `bg-green-600`, `bg-purple-600`, `bg-orange-500`)
+  had no `dark:` variant at all — missed in the first pass since that file
+  lives under `admin/analytics/` rather than `dashboard/settings/`. Fixed
+  with the same `bg-*-600 dark:bg-*-500` convention used everywhere else.
 
 Next, in order:
 
@@ -252,3 +258,5 @@ pipeline against the real services. Prefer one real run over another mock.
 - `b50ed1f` admin users table rebuilt on TanStack Table v9 per
   `docs/tanstack-table.md`'s decision record; `AdminUser` moved to
   `lib/data/users.ts`, dead `user-row.tsx` deleted
+- `aefe794` `dark:` variants added to `summary-cards.tsx`'s four stat
+  cards, caught by a second `/react-ts` pass

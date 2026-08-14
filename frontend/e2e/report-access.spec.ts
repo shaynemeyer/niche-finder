@@ -24,6 +24,50 @@ function testClient() {
   });
 }
 
+// Minimal shapes satisfying TrendsAnalysisResult/AIMarketInsights. The
+// report detail page falls back to a "could not be completed" view when
+// either is missing, so a COMPLETED status alone is not enough to reach it.
+const trendsData = {
+  keyword: 'test',
+  timelineData: [],
+  averageInterest: 50,
+  growthRate: 0,
+  trend: 'stable',
+  relatedQueries: { top: [], rising: [] },
+  regionalInterest: [],
+  insights: [],
+  partial: false,
+};
+
+const aiInsights = {
+  summary: 'test summary',
+  opportunityAssessment: {
+    score: 70,
+    reasoning: 'test reasoning',
+    strengths: [],
+    weaknesses: [],
+  },
+  targetAudience: { demographics: '', psychographics: '', painPoints: [] },
+  competitionAnalysis: {
+    level: 'low',
+    keyPlayers: [],
+    differentiationOpportunities: [],
+  },
+  monetizationStrategies: {
+    primary: '',
+    secondary: [],
+    estimatedRevenuePotential: '',
+  },
+  businessIdeas: [],
+  gtmStrategy: { phase1: [], phase2: [], phase3: [], quickWins: [] },
+  risks: [],
+  recommendations: [],
+  wordCount: 2,
+  isFallback: false,
+  partialData: false,
+  model: 'test-model',
+};
+
 /**
  * Signs in and waits for the credentials POST to complete. Without that wait,
  * a following navigation aborts the request in flight and no session cookie
@@ -52,7 +96,16 @@ test.describe('report detail access', () => {
       select: { id: true },
     });
     const report = await prisma.report.create({
-      data: { userId: user.id, niche, keyword, status: 'COMPLETED' },
+      data: {
+        userId: user.id,
+        niche,
+        keyword,
+        status: 'COMPLETED',
+        overallScore: 70,
+        viabilityRating: 'HIGH',
+        trendsData,
+        aiInsights,
+      },
       select: { id: true },
     });
     return report.id;
@@ -82,7 +135,9 @@ test.describe('report detail access', () => {
     await expect(
       page.getByRole('heading', { name: 'User own niche' }),
     ).toBeVisible();
-    await expect(page.getByText(ownReportId)).toBeVisible();
+    // The page never renders the raw id — the keyword is the other
+    // identifying text it does render.
+    await expect(page.getByText('user owned')).toBeVisible();
   });
 
   test("404s on another account's report rather than exposing it", async ({
@@ -101,7 +156,7 @@ test.describe('report detail access', () => {
       page.getByRole('heading', { name: /this niche does not exist/i }),
     ).toBeVisible();
     await expect(page.getByText('Admin private niche')).toHaveCount(0);
-    await expect(page.getByText(adminReportId)).toHaveCount(0);
+    await expect(page.getByText('admin only')).toHaveCount(0);
   });
 
   test('404s on a well-formed id that does not exist', async ({ page }) => {

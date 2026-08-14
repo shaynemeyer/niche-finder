@@ -2,6 +2,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const create = vi.fn();
 const update = vi.fn();
+const subscriptionFindUnique = vi.fn();
+const subscriptionUpdate = vi.fn();
 
 vi.mock('@/lib/prisma', () => ({
   prisma: {
@@ -9,15 +11,29 @@ vi.mock('@/lib/prisma', () => ({
       create: (...args: unknown[]) => create(...args),
       update: (...args: unknown[]) => update(...args),
     },
+    subscription: {
+      findUnique: (...args: unknown[]) => subscriptionFindUnique(...args),
+      update: (...args: unknown[]) => subscriptionUpdate(...args),
+    },
   },
 }));
 
-import { createUser, updateUserName } from './users';
+import { cancelSubscription, createUser, getSubscription, updateUserName } from './users';
 
 beforeEach(() => {
   vi.clearAllMocks();
   create.mockResolvedValue({ id: 'user-1' });
   update.mockResolvedValue({ id: 'user-1', name: 'Grace Hopper' });
+  subscriptionFindUnique.mockResolvedValue({
+    planType: 'PRO',
+    isActive: true,
+    startDate: new Date('2026-01-01T00:00:00Z'),
+  });
+  subscriptionUpdate.mockResolvedValue({
+    planType: 'FREE',
+    isActive: true,
+    startDate: new Date('2026-01-01T00:00:00Z'),
+  });
 });
 
 describe('createUser', () => {
@@ -82,5 +98,26 @@ describe('updateUserName', () => {
     await updateUserName('user-1', 'Grace Hopper');
 
     expect(update.mock.calls[0][0].select).not.toHaveProperty('password');
+  });
+});
+
+describe('getSubscription', () => {
+  it('scopes the read to the given user', async () => {
+    await getSubscription('user-1');
+
+    expect(subscriptionFindUnique.mock.calls[0][0]).toMatchObject({
+      where: { userId: 'user-1' },
+    });
+  });
+});
+
+describe('cancelSubscription', () => {
+  it('scopes the update to the given user and downgrades to FREE', async () => {
+    await cancelSubscription('user-1');
+
+    expect(subscriptionUpdate.mock.calls[0][0]).toMatchObject({
+      where: { userId: 'user-1' },
+      data: { planType: 'FREE', isActive: true, endDate: null },
+    });
   });
 });

@@ -51,6 +51,23 @@ export function updateUserPlan(userId: string, planType: PlanType) {
   });
 }
 
+/** The caller's subscription, for checking plan type before a cancel/downgrade. */
+export function getSubscription(userId: string) {
+  return prisma.subscription.findUnique({
+    where: { userId },
+    select: { planType: true, isActive: true, startDate: true },
+  });
+}
+
+/** Downgrades the caller's subscription to FREE. Throws P2025 if no subscription row exists. */
+export function cancelSubscription(userId: string) {
+  return prisma.subscription.update({
+    where: { userId },
+    data: { planType: 'FREE', isActive: true, endDate: null },
+    select: { planType: true, isActive: true, startDate: true },
+  });
+}
+
 /** Profile fields for the account settings page. Never selects the password hash. */
 export function getUserProfile(userId: string) {
   return prisma.user.findUnique({

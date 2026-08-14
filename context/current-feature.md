@@ -75,6 +75,12 @@ Done:
   hand-written `route.tsx` that queried Prisma directly from `app/`, cast
   `session.user.id` through `any`, and swallowed errors on the catch path with no
   response. 4 unit tests.
+- **`POST /api/subscription/cancel`** brought up to standards — moved its Prisma
+  queries behind new `getSubscription`/`cancelSubscription` functions in
+  `lib/data/users.ts`, dropped the unnecessary `any` cast on `session.user.id`
+  (already typed via `types/next-auth.d.ts`), and fixed a catch block that
+  swallowed errors without returning a response. 5 route unit tests, 2 data-layer
+  unit tests.
 
 Next, in order:
 
@@ -190,3 +196,6 @@ pipeline against the real services. Prefer one real run over another mock.
   the page renders correctly in dark mode
 - `5c25d44` `GET /api/user/profile` added behind `lib/data/users.getUserProfile`,
   replacing a direct-Prisma `route.tsx` with an `any` cast and a swallowed error
+- `6de3ed0` `POST /api/subscription/cancel` moved behind
+  `lib/data/users.getSubscription`/`cancelSubscription`, dropped an `any` cast on
+  `session.user.id`, fixed a catch block that swallowed errors without responding

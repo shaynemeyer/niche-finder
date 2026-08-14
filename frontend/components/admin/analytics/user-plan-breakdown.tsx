@@ -1,6 +1,6 @@
 import { Users } from 'lucide-react';
 
-import { ProgressBar } from '@/components/admin/progress-bar';
+import { ProgressBar } from '@/components/admin/shared/progress-bar';
 
 type UserPlanBreakdownProps = {
   proUsers: number;

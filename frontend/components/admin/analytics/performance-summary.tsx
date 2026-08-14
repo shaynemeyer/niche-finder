@@ -1,6 +1,6 @@
 import { Activity } from 'lucide-react';
 
-import { ProgressBar } from '@/components/admin/progress-bar';
+import { ProgressBar } from '@/components/admin/shared/progress-bar';
 
 type PerformanceSummaryProps = {
   completedReports: number;

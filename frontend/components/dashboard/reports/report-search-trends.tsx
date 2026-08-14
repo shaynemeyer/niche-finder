@@ -63,7 +63,7 @@ export function ReportSearchTrends({
                       className={
                         isZero
                           ? 'w-full rounded-t transition-all bg-muted-foreground/40 hover:bg-muted-foreground/60'
-                          : 'w-full rounded-t transition-all bg-blue-500 hover:bg-blue-600'
+                          : 'w-full rounded-t transition-all bg-blue-500 hover:bg-blue-600 dark:bg-blue-400 dark:hover:bg-blue-500'
                       }
                       style={{ height: `${heightPct}%` }}
                     >
@@ -108,7 +108,7 @@ export function ReportSearchTrends({
                   <div className="flex items-center gap-2">
                     <div className="w-20 h-2 bg-border rounded-full overflow-hidden">
                       <div
-                        className="h-full bg-blue-500"
+                        className="h-full bg-blue-500 dark:bg-blue-400"
                         style={{ width: `${related.value}%` }}
                       ></div>
                     </div>

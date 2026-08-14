@@ -58,6 +58,19 @@ export const modelInsightsSchema = z.object({
 
 export type ModelInsights = z.infer<typeof modelInsightsSchema>;
 
+/**
+ * The full stored shape: modelInsightsSchema plus the fields this app computes
+ * itself (wordCount, isFallback, partialData, model). Used to validate
+ * aiInsights read back out of the JSONB column, rather than trusting an
+ * unchecked cast - see app/dashboard/reports/[id]/page.tsx.
+ */
+export const aiMarketInsightsSchema = modelInsightsSchema.extend({
+  wordCount: z.number(),
+  isFallback: z.boolean(),
+  partialData: z.boolean(),
+  model: z.string().nullable(),
+});
+
 export interface AIMarketInsights {
   summary: string;
   opportunityAssessment: {

@@ -19,8 +19,8 @@ import { ReportCompetition } from '@/components/dashboard/reports/report-competi
 import { ReportMonetization } from '@/components/dashboard/reports/report-monetization';
 import { ReportBusinessIdeas } from '@/components/dashboard/reports/report-business-ideas';
 import { ReportGtmStrategy } from '@/components/dashboard/reports/report-gtm-strategy';
-import type { TrendsAnalysisResult } from '@/lib/trends/types';
-import type { AIMarketInsights } from '@/lib/validations/insights';
+import { aiMarketInsightsSchema } from '@/lib/validations/insights';
+import { trendsAnalysisResultSchema } from '@/lib/validations/trends';
 
 export default async function ReportDetailPage(
   props: PageProps<'/dashboard/reports/[id]'>,
@@ -55,7 +55,14 @@ export default async function ReportDetailPage(
     );
   }
 
-  if (report.status === 'FAILED' || !report.trendsData || !report.aiInsights) {
+  const trendsParsed = trendsAnalysisResultSchema.safeParse(report.trendsData);
+  const insightsParsed = aiMarketInsightsSchema.safeParse(report.aiInsights);
+
+  if (
+    report.status === 'FAILED' ||
+    !trendsParsed.success ||
+    !insightsParsed.success
+  ) {
     return (
       <div className="max-w-7xl mx-auto space-y-6">
         <BackLink />
@@ -72,8 +79,8 @@ export default async function ReportDetailPage(
     );
   }
 
-  const trends = report.trendsData as unknown as TrendsAnalysisResult;
-  const insights = report.aiInsights as unknown as AIMarketInsights;
+  const trends = trendsParsed.data;
+  const insights = insightsParsed.data;
 
   return (
     <div className="max-w-7xl mx-auto space-y-6">

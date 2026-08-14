@@ -21,6 +21,8 @@ export function listAdminUsers() {
   });
 }
 
+export type AdminUser = Awaited<ReturnType<typeof listAdminUsers>>[number];
+
 /**
  * Deletes a user. Child records (subscription, usage, reports, payment
  * requests) cascade per the schema. Throws P2025 if the id does not exist;

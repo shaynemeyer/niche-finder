@@ -7,19 +7,19 @@ const phases = [
     key: 'phase1' as const,
     title: '📍 Phase 1: Foundation (Weeks 1-4)',
     color: 'bg-blue-50 dark:bg-blue-950',
-    badge: 'bg-blue-600 text-white',
+    badge: 'bg-blue-600 dark:bg-blue-500 text-white',
   },
   {
     key: 'phase2' as const,
     title: '🚀 Phase 2: Growth (Weeks 5-12)',
     color: 'bg-green-50 dark:bg-green-950',
-    badge: 'bg-green-600 text-white',
+    badge: 'bg-green-600 dark:bg-green-500 text-white',
   },
   {
     key: 'phase3' as const,
     title: '📈 Phase 3: Scale (Month 4+)',
     color: 'bg-purple-50 dark:bg-purple-950',
-    badge: 'bg-purple-600 text-white',
+    badge: 'bg-purple-600 dark:bg-purple-500 text-white',
   },
 ];
 

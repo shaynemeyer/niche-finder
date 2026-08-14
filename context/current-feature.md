@@ -99,6 +99,24 @@ Done:
   failed for an unrelated reason and never proved the view rendered. Added
   minimal valid `trendsData`/`aiInsights` fixtures and replaced the id
   assertion with the keyword, which the page does render. 32/32 E2E passing.
+- **`/react-ts` skill review, 7 findings, all fixed.** Solid-fill buttons and
+  badges (`plan-badge.tsx`'s progress bar and CTA, `subscription-section.tsx`'s
+  approved badge and refresh button, `bank-transfer-form.tsx`'s submit button)
+  had no `dark:` variant, unlike every icon usage elsewhere — brought in line
+  with the `bg-*-600 dark:bg-*-500` / gradient `dark:from-*-400` convention
+  already used in `dashboard/layout.tsx` and `payment-request-card.tsx`. The
+  unchecked `as unknown as X` casts on `report.trendsData`/`report.aiInsights`
+  in `/dashboard/reports/[id]` replaced with `safeParse` against new
+  `aiMarketInsightsSchema`/`trendsAnalysisResultSchema`, falling back to the
+  existing "could not be completed" guard on a validation failure. The admin
+  users table — hand-rolled `<table>`, despite `docs/tanstack-table.md` naming
+  it as one of the two cases that motivated pinning TanStack Table v9 as a
+  dependency — rebuilt on `useTable` with `rowSortingFeature`, column defs via
+  `createColumnHelper`, and the shadcn `table` primitive; `AdminUser` moved to
+  `lib/data/users.ts` and the now-dead `user-row.tsx` deleted. Verified live in
+  the browser against an admin session: all six columns render, sort toggles
+  both directions and reorders rows, search filter and role/plan dropdowns
+  still work, zero console or `/_next/mcp` errors.
 
 Next, in order:
 
@@ -227,3 +245,10 @@ pipeline against the real services. Prefer one real run over another mock.
   `trendsData`/`aiInsights` so the detail page reaches its completed view,
   and the assertion that checked for it no longer checks for a raw report
   id the page never renders
+- `3a10aac` `/react-ts` review fixes: `dark:` variants added to solid-fill
+  buttons/badges, `aiMarketInsightsSchema`/`trendsAnalysisResultSchema`
+  added and wired into `/dashboard/reports/[id]` in place of unchecked
+  JSONB casts
+- `b50ed1f` admin users table rebuilt on TanStack Table v9 per
+  `docs/tanstack-table.md`'s decision record; `AdminUser` moved to
+  `lib/data/users.ts`, dead `user-row.tsx` deleted

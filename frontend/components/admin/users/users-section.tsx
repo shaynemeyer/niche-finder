@@ -9,7 +9,7 @@ import type { PlanType, Role } from '@/lib/generated/prisma/client';
 import { MetricCard } from '@/components/admin/shared/metric-card';
 import { EmptyUsers } from '@/components/admin/users/empty-users';
 import { UsersTable } from '@/components/admin/users/users-table';
-import type { AdminUser } from '@/components/admin/users/user-row';
+import type { AdminUser } from '@/lib/data/users';
 import {
   AlertDialog,
   AlertDialogAction,

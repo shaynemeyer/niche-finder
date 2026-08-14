@@ -53,7 +53,9 @@ export function PlanBadge({
             <div
               className={cn(
                 'h-full rounded-full transition-all',
-                limitReached ? 'bg-red-600' : 'bg-blue-600',
+                limitReached
+                  ? 'bg-red-600 dark:bg-red-500'
+                  : 'bg-blue-600 dark:bg-blue-500',
               )}
               style={{ width: `${percentage}%` }}
             />
@@ -62,7 +64,7 @@ export function PlanBadge({
           <Link
             href="/dashboard/settings"
             onClick={onNavigate}
-            className="mt-3 flex items-center justify-center gap-2 w-full px-3 py-2 text-sm font-medium text-white rounded-lg bg-linear-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1"
+            className="mt-3 flex items-center justify-center gap-2 w-full px-3 py-2 text-sm font-medium text-white rounded-lg bg-linear-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 dark:from-blue-400 dark:to-purple-400 dark:hover:from-blue-500 dark:hover:to-purple-500 transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1"
           >
             Upgrade to Pro
           </Link>

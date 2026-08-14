@@ -31,7 +31,7 @@ const statusBadge: Record<
     </span>
   ),
   APPROVED: (
-    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-600 text-white">
+    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 dark:bg-green-950/60 text-green-800 dark:text-green-200">
       <CheckCircle className="w-3 h-3" />
       Approved
     </span>
@@ -155,7 +155,7 @@ export function SubscriptionSection({
                 type="button"
                 onClick={handleRefreshStatus}
                 disabled={isRefreshing}
-                className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-lg whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-1 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-white bg-green-600 hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-600 rounded-lg whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-1 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 {isRefreshing ? 'Refreshing...' : 'Refresh Status'}
               </button>
@@ -214,7 +214,7 @@ export function SubscriptionSection({
               <button
                 type="button"
                 onClick={() => setShowBankTransferForm(true)}
-                className="w-full inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-white bg-linear-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 transition-all"
+                className="w-full inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-white bg-linear-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 dark:from-blue-400 dark:to-purple-400 dark:hover:from-blue-500 dark:hover:to-purple-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 transition-all"
               >
                 Upgrade via Bank Transfer
               </button>

@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { BookSearch } from 'lucide-react';
 
-import { ThemeToggle } from '@/components/theme-toggle';
+import { ThemeToggle } from '@/components/theme/theme-toggle';
 
 export function Navbar() {
   return (

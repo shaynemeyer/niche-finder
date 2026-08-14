@@ -13,7 +13,7 @@ import {
   X,
   Sparkles,
 } from 'lucide-react';
-import { ThemeToggle } from '@/components/theme-toggle';
+import { ThemeToggle } from '@/components/theme/theme-toggle';
 import { PlanBadge } from '@/components/dashboard/plan-badge';
 
 export default function DashboardLayout({

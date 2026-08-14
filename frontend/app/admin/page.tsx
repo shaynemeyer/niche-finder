@@ -3,10 +3,10 @@ import { redirect } from 'next/navigation';
 import { auth } from '@/lib/auth';
 import { getAdminAnalytics } from '@/lib/data/admin';
 import { PRO_MONTHLY_PRICE } from '@/lib/constants';
-import { KeyMetrics } from '@/components/admin/key-metrics';
-import { ReportsByStatus } from '@/components/admin/reports-by-status';
-import { PlatformStatistics } from '@/components/admin/platform-statistics';
-import { QuickActions } from '@/components/admin/quick-actions';
+import { KeyMetrics } from '@/components/admin/shared/key-metrics';
+import { ReportsByStatus } from '@/components/admin/shared/reports-by-status';
+import { PlatformStatistics } from '@/components/admin/shared/platform-statistics';
+import { QuickActions } from '@/components/admin/shared/quick-actions';
 
 // No usage target is modeled yet; 100 keeps the progress bar meaningful.
 const MONTHLY_VALIDATIONS_TARGET = 100;

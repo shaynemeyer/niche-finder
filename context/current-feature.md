@@ -90,6 +90,15 @@ Done:
   `components/auth/`; `theme-provider`/`theme-toggle` moved into a new
   `components/theme/`. All import paths updated; build, lint, typecheck, and
   the full unit suite verified after each move.
+- **Fixed a broken E2E fixture in `e2e/report-access.spec.ts`.** `seedReport`
+  created `COMPLETED` reports with no `trendsData`/`aiInsights`, so
+  `/dashboard/reports/[id]` always fell through to the "could not be
+  completed" guard branch instead of the real completed view — invisible
+  because the one assertion checking the completed view asserted
+  `getByText(ownReportId)`, and the page never renders the raw id, so it
+  failed for an unrelated reason and never proved the view rendered. Added
+  minimal valid `trendsData`/`aiInsights` fixtures and replaced the id
+  assertion with the keyword, which the page does render. 32/32 E2E passing.
 
 Next, in order:
 
@@ -214,3 +223,7 @@ pipeline against the real services. Prefer one real run over another mock.
 - `430c2ce` `login-form`/`register-form` grouped into `components/auth/`,
   `theme-provider`/`theme-toggle` into `components/theme/` — no more loose
   files at the `components/` root
+- `0ad4f96` fixed `e2e/report-access.spec.ts`: seeded reports now include
+  `trendsData`/`aiInsights` so the detail page reaches its completed view,
+  and the assertion that checked for it no longer checks for a raw report
+  id the page never renders

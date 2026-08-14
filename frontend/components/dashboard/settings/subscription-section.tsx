@@ -52,6 +52,7 @@ export function SubscriptionSection({
   const { update: updateSession } = useSession();
   const [showBankTransferForm, setShowBankTransferForm] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isCanceling, setIsCanceling] = useState(false);
 
   const planType = subscription?.planType ?? 'FREE';
   const isPro = planType === 'PRO' && (subscription?.isActive ?? false);
@@ -61,10 +62,14 @@ export function SubscriptionSection({
   // Subscription plan is baked into the JWT and only re-read from the
   // database on a session update trigger, so a plain router.refresh() alone
   // would keep showing the stale plan after an admin approves payment.
+  // updateSession() must be called with an argument — next-auth's update()
+  // only sends the POST that carries trigger: 'update' to the jwt callback
+  // when it has a body; called with no argument at all it silently issues a
+  // plain GET and the session (and the JWT cookie) never actually refresh.
   async function handleRefreshStatus() {
     setIsRefreshing(true);
     try {
-      const updated = await updateSession();
+      const updated = await updateSession({});
       const nowPro =
         updated?.user?.subscription?.planType === 'PRO' &&
         updated.user.subscription.isActive &&
@@ -76,6 +81,40 @@ export function SubscriptionSection({
       toast.error('Could not refresh status. Please try again.');
     } finally {
       setIsRefreshing(false);
+    }
+  }
+
+  async function handleDowngrade() {
+    if (
+      !window.confirm(
+        'Downgrade to the Free plan? You will lose Pro benefits immediately.',
+      )
+    ) {
+      return;
+    }
+
+    setIsCanceling(true);
+    try {
+      const response = await fetch('/api/subscription/cancel', {
+        method: 'POST',
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error ?? 'Something went wrong');
+      }
+
+      // See the comment on handleRefreshStatus: an argument is required or
+      // the session/JWT cookie never actually refreshes.
+      await updateSession({});
+      toast.success(data.message ?? 'Downgraded to Free plan');
+      router.refresh();
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : 'Could not downgrade plan',
+      );
+    } finally {
+      setIsCanceling(false);
     }
   }
 
@@ -184,8 +223,13 @@ export function SubscriptionSection({
                 <li>✓ Trending niches alerts</li>
               </ul>
             </div>
-            <button className="inline-flex items-center px-4 py-2 text-sm font-medium text-foreground bg-card border border-border hover:bg-accent rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
-              Downgrade to Free
+            <button
+              type="button"
+              onClick={handleDowngrade}
+              disabled={isCanceling}
+              className="inline-flex items-center px-4 py-2 text-sm font-medium text-foreground bg-card border border-border hover:bg-accent rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              {isCanceling ? 'Processing...' : 'Downgrade to Free'}
             </button>
           </>
         ) : (
